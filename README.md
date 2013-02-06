@@ -1,11 +1,8 @@
 # grunt-sencha-dependencies
 
-> A Grunt.js plugin which will figure out the order of Ext classes  your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc
+> A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc
 
 ## Getting Started
-_If you haven't used [grunt][] before, be sure to check out the [Getting Started][] guide._
-
-From the same directory as your project's [Gruntfile][Getting Started] and [package.json][], install this plugin with the following command:
 
 ```bash
 npm install grunt-sencha-dependencies --save-dev
@@ -36,56 +33,94 @@ grunt.initConfig({
     },
     your_target: {
       // Target-specific file lists and/or options go here.
-    },
-  },
+    }
+  }
 })
 ```
 
 ### Options
 
-#### options.separator
+#### options.appJs
 Type: `String`
-Default value: `',  '`
+Default value: undefined
 
-A string value that is used to do something with whatever.
+This should be the string path to your file which contains the Ext.application call which initialises your application
 
-#### options.punctuation
+#### options.senchaDir
 Type: `String`
-Default value: `'.'`
+Default value: undefined
 
-A string value that is used to do something else with whatever else.
+This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there.
 
 ### Usage Examples
 
-#### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
+#### Basic example
+In this example the Ext.application is defined in a file called `app.js` in the `js` folder and the Sencha Ext.js 4.1.2 lib is installed in the directory `js/vendor/extjs-4.1.2`.
+The generated array of ordered files will be in a global variable called `sencha_dependencies_prod`
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    options: {},
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
+    prod: {
+      options: {
+        appJs: './js/app.js',
+        senchaDir: './js/vendor/extjs-4.1.2'
+      }
+    }
+  }
 })
 ```
 
-#### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
+####  How to use this with subsequent steps
+You can now use this generated array with other tasks - for example the most common use case is to concatenate these files together in the right order.
+
+Below is the simplest example. Note that you need to use the template syntax '<% %>' because at the time the JavaScript is evaluated in the below config the actual sencha_dependencies task will not have been run.
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    options: {
-      separator: ': ',
-      punctuation: ' !!!',
-    },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
+    prod: {
+      options: {
+        appJs: './js/app.js',
+        senchaDir: './js/vendor/extjs-4.1.2'
+      }
+    }
   },
-})
+  concat: {
+      prod: {
+        src: '<%= sencha_dependencies_prod %>',
+        dest: 'build/app.js',
+      }
+    }
+});
+
+grunt.loadNpmTasks('grunt-contrib-concat');
+grunt.loadNpmTasks('grunt-sencha-dependencies');
+
+grunt.registerTask('prod', ['sencha_dependencies:prod', 'concat:prod']);
+```
+
+Or if you wanted to run JSHint on all the files you could do:
+
+```js
+grunt.initConfig({
+  sencha_dependencies: {
+    prod: {
+      options: {
+        appJs: './js/app.js',
+        senchaDir: './js/vendor/extjs-4.1.2'
+      }
+    }
+  },
+  jshint: {
+    prod: <%= sencha_dependencies_prod %>'
+  }
+});
+
+grunt.loadNpmTasks('grunt-contrib-jshint');
+grunt.loadNpmTasks('grunt-sencha-dependencies');
+
+grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
 ```
 
 ## Contributing

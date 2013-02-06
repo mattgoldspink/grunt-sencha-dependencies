@@ -10,22 +10,15 @@
 
 module.exports = function(grunt) {
 
-  var Ext = {
-    Loader: {
-    }
-  };
-
   // Please see the grunt documentation for more information regarding task
   // creation: https://github.com/gruntjs/grunt/blob/devel/docs/toc.md
 
-  grunt.registerMultiTask('sencha_dependencies', 'Your task description goes here.', function() {
-    // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
-      punctuation: '.',
-      separator: ', '
-    });
+  grunt.registerMultiTask('sencha_dependencies', 'Task to generate the ordered array of sencha depdendencies', function(name) {
 
-    grunt.log.writeln('Processing Sencha app file "' + options.appFile + '" created.');
+    var options = this.options({});
+
+    grunt.log.writeln('Processing Sencha app file "' + options.appFile + '"...');
+
     var src = [options.appFile].map(function(filepath) {
         // Warn if a source file/pattern was invalid.
         if (!grunt.file.exists(filepath)) {
@@ -179,8 +172,8 @@ module.exports = function(grunt) {
 
     // finally push in our app.js
     filesLoadedSoFar.push(options.appFile);
-
-    grunt.log.writeln('Files matching were: \n    ' + filesLoadedSoFar.join('\n    ') + '');
+    grunt.log.writeln('    File array (' + filesLoadedSoFar.length + ') written to ' + 'sencha_dependencies_' + this.target);
+    grunt.config.set('sencha_dependencies_' + this.target, filesLoadedSoFar);
   });
 
 };
