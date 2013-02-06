@@ -1,7 +1,6 @@
 'use strict';
 
-var grunt = require('grunt');
-
+var sencha_utils;
 /*
   ======== A Handy Little Nodeunit Reference ========
   https://github.com/caolan/nodeunit
@@ -22,27 +21,31 @@ var grunt = require('grunt');
     test.ifError(value)
 */
 
-exports.sencha_require_analysis = {
+exports.sencha_dependencies = {
   setUp: function(done) {
+    sencha_utils = require('../tasks/lib/sencha_utils.js');
     // setup here if necessary
     done();
   },
-  default_options: function(test) {
+  can_load_sencha_utils: function(test) {
     test.expect(1);
-
-    var actual = grunt.file.read('tmp/default_options');
-    var expected = grunt.file.read('test/expected/default_options');
-    test.equal(actual, expected, 'should describe what the default behavior is.');
-
+    test.ok(sencha_utils, "loaded sencha_utils");
     test.done();
   },
-  custom_options: function(test) {
-    test.expect(1);
-
-    var actual = grunt.file.read('tmp/custom_options');
-    var expected = grunt.file.read('test/expected/custom_options');
-    test.equal(actual, expected, 'should describe what the custom option(s) behavior is.');
-
+  global_window_created: function(test) {
+    test.expect(3);
+    sencha_utils.defineGlobals();
+    test.ok(global.window, "window created");
+    test.ok(global.window.navigator, "window.navigator created");
+    test.ok(global.window.attachEvent, "window.attachEvent created");
     test.done();
   },
+  global_navigator_created: function(test) {
+    test.expect(2);
+    sencha_utils.defineGlobals();
+    test.ok(global.navigator, "navigator created");
+    test.equal(global.navigator.userAgent, "node", "navigator.userAgent created");
+    test.done();
+  }
+
 };
