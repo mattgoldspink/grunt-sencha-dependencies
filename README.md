@@ -38,6 +38,8 @@ grunt.initConfig({
 })
 ```
 
+See below for the options and examples.
+
 ### Options
 
 #### options.appJs
@@ -113,7 +115,7 @@ grunt.initConfig({
     }
   },
   jshint: {
-    prod: <%= sencha_dependencies_prod %>'
+    prod: '<%= sencha_dependencies_prod %>'
   }
 });
 
