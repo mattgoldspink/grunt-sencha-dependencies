@@ -4,22 +4,41 @@ var grunt = require('grunt');
 
 function SenchaDependencyChecker(appJsFilePath, senchaDir){
 	this.appJsFilePath = appJsFilePath;
-	this.senchaDir = senchaDir;
 	this.lookupPaths = {};
     this.filesLoadedSoFar = [];
     this.beingLoaded = [];
     this.classesSeenSoFar = {};
+    if (senchaDir) {
+        this.setSenchaDir(senchaDir);
+    }
 }
 
-SenchaDependencyChecker.prototype.mapClassToFile = function (className) {
+function removeTrailingSlash(path) {
+    return path[path.length - 1] === '/' ? path.substring(0, path.length - 1) : path;
+}
+
+SenchaDependencyChecker.prototype.addLookupPath = function(key, value) {
+    this.lookupPaths[key] = removeTrailingSlash(value);
+};
+
+SenchaDependencyChecker.prototype.setSenchaDir = function(_senchaDir){
+    this.senchaDir = _senchaDir;
+    this.addLookupPath('Ext', removeTrailingSlash(_senchaDir) + '/src');
+};
+
+SenchaDependencyChecker.prototype.mapClassToFile = function (className, dontTestExistance) {
   var parts = className.split('.'),
       filepath;
   if (this.lookupPaths[parts[0]]) {
-    filepath = this.lookupPaths[parts[0]] + '/' + parts.slice(1).join('/') + '.js';
+    if (parts[0] === 'Ext' && parts.length === 1) {
+        filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + '/ext-debug.js';
+    } else {
+        filepath = this.lookupPaths[parts[0]] + '/' + parts.slice(1).join('/') + '.js';
+    }
   } else {
     filepath = parts.join('/') + '.js';
   }
-  if (!grunt.file.exists(filepath)) {
+  if (!grunt.file.exists(filepath) && !dontTestExistance) {
     grunt.log.warn('Source file "' + filepath + '" not found.');
     return '';
   }
@@ -163,13 +182,11 @@ SenchaDependencyChecker.prototype.getDependencies = function () {
         return grunt.file.read(filepath);
     }).join(',');
 
-    this.lookupPaths.Ext = this.senchaDir + '/src';
-
     this.defineGlobals();
     this.defineExtGlobals();
 
     var contents = grunt.file.read(this.senchaDir + '/ext-debug.js');
-    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');	
+    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');
     try {
        eval(contents);
     } catch (e) {}
