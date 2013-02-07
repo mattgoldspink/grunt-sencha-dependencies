@@ -2,16 +2,20 @@
 
 var grunt = require('grunt');
 
-var lookupPaths = {},
-    filesLoadedSoFar = [],
-    beingLoaded = [],
-    classesSeenSoFar = {};
+function SenchaDependencyChecker(appJsFilePath, senchaDir){
+	this.appJsFilePath = appJsFilePath;
+	this.senchaDir = senchaDir;
+	this.lookupPaths = {};
+    this.filesLoadedSoFar = [];
+    this.beingLoaded = [];
+    this.classesSeenSoFar = {};
+}
 
-function mapClassToFile(className) {
+SenchaDependencyChecker.prototype.mapClassToFile = function (className) {
   var parts = className.split('.'),
       filepath;
-  if (lookupPaths[parts[0]]) {
-    filepath = lookupPaths[parts[0]] + '/' + parts.slice(1).join('/') + '.js';
+  if (this.lookupPaths[parts[0]]) {
+    filepath = this.lookupPaths[parts[0]] + '/' + parts.slice(1).join('/') + '.js';
   } else {
     filepath = parts.join('/') + '.js';
   }
@@ -20,27 +24,28 @@ function mapClassToFile(className) {
     return '';
   }
   return filepath;
-}
+};
 
-function loadClassFileAndEval(className, onDone) {
+SenchaDependencyChecker.prototype.loadClassFileAndEval = function(className, onDone) {
   if (className) {
-    var loadPath = mapClassToFile(className);
-    if (loadPath !== '' && !grunt.util._.contains(filesLoadedSoFar, loadPath) && !grunt.util._.contains(beingLoaded, loadPath)) {
-      beingLoaded.push(loadPath);
-      var contents = grunt.file.read(loadPath);
-      eval(contents);
-      filesLoadedSoFar.push(loadPath);
+    var loadPath = this.mapClassToFile(className);
+    if (loadPath !== '' &&
+		!grunt.util._.contains(this.filesLoadedSoFar, loadPath) &&
+		!grunt.util._.contains(this.beingLoaded, loadPath)) {
+      this.beingLoaded.push(loadPath);
+      eval(grunt.file.read(loadPath));
+      this.filesLoadedSoFar.push(loadPath);
     }
   }
   if (onDone) {
     onDone();
   }
-}
+};
 
-function defineClassNameSpace(className, aliasClassDef) {
+SenchaDependencyChecker.prototype.defineClassNameSpace = function(className, aliasClassDef) {
   var parts = className.split('.'),
       previousPart = global;
-  if (!classesSeenSoFar[className]) {
+  if (!this.classesSeenSoFar[className]) {
   }
   for (var i = 0, len = parts.length; i < len; i++) {
     var part = parts[i];
@@ -49,35 +54,35 @@ function defineClassNameSpace(className, aliasClassDef) {
     }
     previousPart = previousPart[part] ;
   }
-  classesSeenSoFar[className] = true;
+  this.classesSeenSoFar[className] = true;
   return previousPart;
-}
+};
 
-function processClassConf(name, classConf) {
+SenchaDependencyChecker.prototype.processClassConf = function (name, classConf) {
   var singletonConf = {}, i, len;
   if (classConf.singleton) {
     for (var prop in classConf) {
         singletonConf[prop] = global.emptyFn;
     }
   }
-  var classDef = defineClassNameSpace(name, singletonConf);
+  var classDef = this.defineClassNameSpace(name, singletonConf);
   if (classConf.alternateClassName) {
     if (typeof classConf.alternateClassName === "string") {
       classConf.alternateClassName  = [classConf.alternateClassName];
     }
     for (i = 0, len = classConf.alternateClassName.length; i < len; i++) {
-      defineClassNameSpace(classConf.alternateClassName[i], classDef);
+      this.defineClassNameSpace(classConf.alternateClassName[i], classDef);
     }
   }
   if (classConf.extend) {
-    loadClassFileAndEval(classConf.extend);
+    this.loadClassFileAndEval(classConf.extend);
   }
   if (classConf.requires) {
     if (typeof classConf.requires === "string") {
       classConf.requires  = [classConf.requires];
     }
     for (i = 0, len = classConf.requires.length; i < len; i++) {
-      loadClassFileAndEval(classConf.requires[i]);
+      this.loadClassFileAndEval(classConf.requires[i]);
     }
   }
   if (classConf.uses) {
@@ -85,18 +90,18 @@ function processClassConf(name, classConf) {
       classConf.uses  = [classConf.uses];
     }
     for (i = 0, len = classConf.uses.length; i < len; i++) {
-      loadClassFileAndEval(classConf.uses[i]);
+      this.loadClassFileAndEval(classConf.uses[i]);
     }
   }
   if (classConf.controllers) {
     for (i = 0, len = classConf.controllers.length; i < len; i++) {
       var cName = classConf.controllers[i].split('.').length > 1 ? classConf.controllers[i] : classConf.name + '.controller.' + classConf.controllers[i];
-      loadClassFileAndEval(cName);
+      this.loadClassFileAndEval(cName);
     }
   }
-}
+};
 
-function defineGlobals() {
+SenchaDependencyChecker.prototype.defineGlobals = function() {
     global.emptyFn = function() {return false;};
     global.window = {
       navigator : 'Linux',
@@ -111,25 +116,30 @@ function defineGlobals() {
     };
     global.top = {};
     return global;
-}
+};
 
-function defineExtGlobals() {
+SenchaDependencyChecker.prototype.defineExtGlobals = function () {
+	var me = this;
 	global.Ext = {
       Loader: {
         setConfig: function(obj) {
           if (obj.paths) {
-            lookupPaths = grunt.util._.defaults(obj.paths, lookupPaths);
+            me.lookupPaths = grunt.util._.defaults(obj.paths, me.lookupPaths);
           }
         }
       },
-      syncRequire: loadClassFileAndEval,
-      require: loadClassFileAndEval,
+      syncRequire: function() {
+          me.loadClassFileAndEval.apply(me, arguments);
+      },
+      require: function() {
+          me.loadClassFileAndEval.apply(me, arguments);
+      },
       application: function(config) {
-        lookupPaths[config.name] = './app';
-        processClassConf(config.name, config);
+        me.lookupPaths[config.name] = './app';
+        me.processClassConf(config.name, config);
       },
       define: function(name, conf) {
-        processClassConf(name, conf);
+        me.processClassConf(name, conf);
       },
       String: {
         splitWords: global.emptyFn,
@@ -140,10 +150,10 @@ function defineExtGlobals() {
       }
     };
     return global.Ext;
-}
+};
 
-function getDependenciesForAppJs(appJsFilePath, senchaDir) {
-    var src = [appJsFilePath].map(function(filepath) {
+SenchaDependencyChecker.prototype.getDependencies = function () {
+    var src = [this.appJsFilePath].map(function(filepath) {
         // Warn if a source file/pattern was invalid.
         if (!grunt.file.exists(filepath)) {
           grunt.log.error('Source file "' + filepath + '" not found.');
@@ -153,23 +163,19 @@ function getDependenciesForAppJs(appJsFilePath, senchaDir) {
         return grunt.file.read(filepath);
     }).join(',');
 
-    lookupPaths.Ext = senchaDir + '/src';
+    this.lookupPaths.Ext = this.senchaDir + '/src';
 
-    defineGlobals();
-    defineExtGlobals();
+    this.defineGlobals();
+    this.defineExtGlobals();
 
-    var contents = grunt.file.read(senchaDir + '/ext-debug.js');
-    filesLoadedSoFar.push(senchaDir + '/ext-debug.js');
+    var contents = grunt.file.read(this.senchaDir + '/ext-debug.js');
+    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');	
     try {
        eval(contents);
     } catch (e) {}
     eval(src);
-    filesLoadedSoFar.push(appJsFilePath);
-    return filesLoadedSoFar;
-}
-
-module.exports = {
-	getDependenciesForAppJs: getDependenciesForAppJs,
-	defineGlobals: defineGlobals,
-	mapClassToFile: mapClassToFile
+    this.filesLoadedSoFar.push(this.appJsFilePath);
+    return this.filesLoadedSoFar;
 };
+
+module.exports = SenchaDependencyChecker;

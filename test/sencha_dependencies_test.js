@@ -1,6 +1,6 @@
 'use strict';
 
-var sencha_utils;
+var SenchaDependencyChecker;
 /*
   ======== A Handy Little Nodeunit Reference ========
   https://github.com/caolan/nodeunit
@@ -23,18 +23,18 @@ var sencha_utils;
 
 exports.sencha_dependencies = {
   setUp: function(done) {
-    sencha_utils = require('../tasks/lib/sencha_utils.js');
+    SenchaDependencyChecker = require('../tasks/lib/SenchaDependencyChecker.js');
     // setup here if necessary
     done();
   },
   can_load_sencha_utils: function(test) {
     test.expect(1);
-    test.ok(sencha_utils, "loaded sencha_utils");
+    test.ok(SenchaDependencyChecker, "loaded sencha_utils");
     test.done();
   },
   global_window_created: function(test) {
     test.expect(3);
-    sencha_utils.defineGlobals();
+    new SenchaDependencyChecker().defineGlobals();
     test.ok(global.window, "window created");
     test.ok(global.window.navigator, "window.navigator created");
     test.ok(global.window.attachEvent, "window.attachEvent created");
@@ -42,7 +42,7 @@ exports.sencha_dependencies = {
   },
   global_navigator_created: function(test) {
     test.expect(2);
-    sencha_utils.defineGlobals();
+    new SenchaDependencyChecker().defineGlobals();
     test.ok(global.navigator, "navigator created");
     test.equal(global.navigator.userAgent, "node", "navigator.userAgent created");
     test.done();
