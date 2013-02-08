@@ -62,5 +62,20 @@ exports.sencha_dependencies = {
     subject.setSenchaDir('./vendor/ext-4.1.2/');
     assertPathIsCorrect('Ext.panel.Panel', './vendor/ext-4.1.2/src/panel/Panel.js', test);
     test.done();
+  },
+  when_two_package_levels_set_the_most_specific_is_picked: function(test) {
+    test.expect(1);
+    subject.setSenchaDir('./vendor/ext-4.1.2/');
+    subject.addLookupPath('Ext.ux', './vendor/ux');
+    assertPathIsCorrect('Ext.ux.Custom', './vendor/ux/Custom.js', test);
+    test.done();
+  },
+  when_full_class_set_the_most_specific_is_picked: function(test) {
+    test.expect(1);
+    subject.setSenchaDir('./vendor/ext-4.1.2/');
+    subject.addLookupPath('Ext.ux', './vendor/ux');
+    subject.addLookupPath('Ext.ux.FullPath', './vendor/ux2/path/FullPath.js');
+    assertPathIsCorrect('Ext.ux.FullPath', './vendor/ux2/path/FullPath.js', test);
+    test.done();
   }
 };

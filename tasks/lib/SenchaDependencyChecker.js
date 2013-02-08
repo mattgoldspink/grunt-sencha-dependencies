@@ -28,14 +28,23 @@ SenchaDependencyChecker.prototype.setSenchaDir = function(_senchaDir){
 
 SenchaDependencyChecker.prototype.mapClassToFile = function (className, dontTestExistance) {
   var parts = className.split('.'),
-      filepath;
-  if (this.lookupPaths[parts[0]]) {
-    if (parts[0] === 'Ext' && parts.length === 1) {
-        filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + '/ext-debug.js';
-    } else {
-        filepath = this.lookupPaths[parts[0]] + '/' + parts.slice(1).join('/') + '.js';
-    }
+      filepath,
+      currentIndex = parts.length + 1,
+      currentPackage;
+  // let's special case for Ext core stuff
+  if (parts[0] === 'Ext' && parts.length === 1) {
+      filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + '/ext-debug.js';
   } else {
+      // loop through from the longest package name to find it
+      while (currentIndex-- >= 0) {
+        currentPackage = parts.slice(0, currentIndex).join('.');
+        if (this.lookupPaths[currentPackage]) {
+            filepath = this.lookupPaths[currentPackage] + (currentIndex === parts.length ? '' : '/' + parts.slice(currentIndex, parts.length).join('/') + '.js');
+            break;
+        }
+      }
+  }
+  if (filepath === undefined) {
     filepath = parts.join('/') + '.js';
   }
   if (!grunt.file.exists(filepath) && !dontTestExistance) {
