@@ -24,7 +24,9 @@ module.exports = function(grunt) {
     grunt.log.writeln('Processing Sencha app file "' + options.appJs + '"...');
     var filesLoadedSoFar = new SenchaDependencyChecker(options.appJs, options.senchaDir).getDependencies();
     // finally push in our app.js
-    grunt.log.writeln('    File array (' + filesLoadedSoFar.length + ') written to ' + 'sencha_dependencies_' + this.target);
+    grunt.log.ok('Success! ' + filesLoadedSoFar.length + ' files added to property ' + 'sencha_dependencies_' + this.target);
+    grunt.verbose.writeln("Files are:\n    " + filesLoadedSoFar.join('\n    '));
+
     grunt.config.set('sencha_dependencies_' + this.target, filesLoadedSoFar);
   });
 

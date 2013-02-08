@@ -19,19 +19,9 @@ module.exports = function(grunt) {
         '<%= nodeunit.tests %>'
       ],
       options: {
-        curly: true,
-        eqeqeq: true,
-        immed: true,
-        latedef: true,
-        newcap: true,
-        noarg: true,
-        sub: true,
-        undef: true,
-        unused: true,
-        boss: true,
-        eqnull: true,
         node: true,
-        evil: true
+        evil: true,
+        strict: false
       }
     },
 

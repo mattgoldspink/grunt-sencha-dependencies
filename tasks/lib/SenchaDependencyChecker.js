@@ -1,4 +1,3 @@
-'use strict';
 
 var grunt = require('grunt');
 
@@ -133,27 +132,44 @@ SenchaDependencyChecker.prototype.defineGlobals = function() {
     global.emptyFn = function() {return false;};
     global.window = {
       navigator : 'Linux',
-      attachEvent: global.emptyFn
+      attachEvent: global.emptyFn,
+      location: {
+        protocol: 'http'
+      }
     };
     global.navigator = {'userAgent' : 'node'};
     global.document = {
       documentElement:{style: {boxShadow: undefined}},
-      getElementsByTagName : global.emptyFn,
       attachEvent: global.emptyFn,
-      createElement: global.emptyFn
+      createElement: global.emptyFn,
+      getElementsByTagName: function() {
+        return [{
+            src: this.senchaDir + '/ext-debug.js'
+        }];
+      }
     };
+    global.ActiveXObject = global.emptyFn;
     global.top = {};
     return global;
 };
 
 SenchaDependencyChecker.prototype.defineExtGlobals = function () {
 	var me = this;
-	global.Ext = {
+	global.Ext.apply(global.Ext, {
       Loader: {
         setConfig: function(obj) {
           if (obj.paths) {
-            me.lookupPaths = grunt.util._.defaults(obj.paths, me.lookupPaths);
+            global.Ext.Loader.setPaths(obj.paths);
           }
+        },
+        setPaths: function(key, value) {
+            if (global.Ext.isString(key)) {
+                me.addLookupPath(key, value);
+            } else {
+                for (var prop in key) {
+                    me.addLookupPath(prop, key[prop]);
+                }
+            }
         }
       },
       syncRequire: function() {
@@ -168,19 +184,24 @@ SenchaDependencyChecker.prototype.defineExtGlobals = function () {
       },
       define: function(name, conf) {
         me.processClassConf(name, conf);
-      },
-      String: {
-        splitWords: global.emptyFn,
-        format: global.emptyFn
-      },
-      Array: {
-        toMap: global.emptyFn
       }
-    };
+    });
     return global.Ext;
 };
 
 SenchaDependencyChecker.prototype.getDependencies = function () {
+    this.defineGlobals();
+    var contents = grunt.file.read(this.senchaDir + '/ext-debug.js');
+    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');
+
+    try {
+        eval(contents);
+    } catch (e) {
+        grunt.log.error("An unexpected error occured, please report a bug here https://github.com/mattgoldspink/grunt-sencha-dependencies/issues?state=open - " + e);
+    }
+    global.Ext = Ext;
+    this.defineExtGlobals();
+
     var src = [this.appJsFilePath].map(function(filepath) {
         // Warn if a source file/pattern was invalid.
         if (!grunt.file.exists(filepath)) {
@@ -190,16 +211,8 @@ SenchaDependencyChecker.prototype.getDependencies = function () {
         // Read file source.
         return grunt.file.read(filepath);
     }).join(',');
-
-    this.defineGlobals();
-    this.defineExtGlobals();
-
-    var contents = grunt.file.read(this.senchaDir + '/ext-debug.js');
-    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');
-    try {
-       eval(contents);
-    } catch (e) {}
     eval(src);
+
     this.filesLoadedSoFar.push(this.appJsFilePath);
     return this.filesLoadedSoFar;
 };
