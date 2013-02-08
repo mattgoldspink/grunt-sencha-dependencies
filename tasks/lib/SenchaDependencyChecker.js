@@ -199,8 +199,8 @@ SenchaDependencyChecker.prototype.defineExtGlobals = function () {
 SenchaDependencyChecker.prototype.getDependencies = function () {
     var senchaCoreFile, contents, src;
     this.defineGlobals();
-    this.filesLoadedSoFar.push(senchaCoreFile);
     senchaCoreFile = this.mapClassToFile('Ext');
+    this.filesLoadedSoFar.push(senchaCoreFile);
     contents = grunt.file.read(senchaCoreFile);
     try {
         eval(contents);

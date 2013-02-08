@@ -2,6 +2,16 @@
 
 > A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc
 
+## IMPORTANT - This needs Grunt 0.4.0rc7
+
+This plugin was built using the latest grunt because I needed a robust and simple Jasmine task. I'd highly recommend upgrading to Grunt 0.4.0rc7 or later if you've not done so. The instructions to do so can be found on the Grunt wiki: https://github.com/gruntjs/grunt/wiki/Getting-started
+
+In addition, don't get caught out when installing the grunt-contrib-* tasks. These also need
+to the be the latest compatible ones that work with 0.4.0rc7. For example I've been using the following:
+
+- npm install grunt-contrib-concat@0.1.2rc6 --save-dev
+- npm install grunt-contrib-uglify@0.1.1rc6 --save-dev
+
 ## Getting Started
 
 ```bash
