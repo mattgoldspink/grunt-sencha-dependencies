@@ -71,10 +71,11 @@ exports.sencha_dependencies = {
     test.done();
   },
   when_full_class_set_the_most_specific_is_picked: function(test) {
-    test.expect(1);
+    test.expect(2);
     subject.setSenchaDir('./vendor/ext-4.1.2/');
     subject.addLookupPath('Ext.ux', './vendor/ux');
     subject.addLookupPath('Ext.ux.FullPath', './vendor/ux2/path/FullPath.js');
+    assertPathIsCorrect('Ext.ux.Custom', './vendor/ux/Custom.js', test);
     assertPathIsCorrect('Ext.ux.FullPath', './vendor/ux2/path/FullPath.js', test);
     test.done();
   }
