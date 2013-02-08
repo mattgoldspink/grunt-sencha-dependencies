@@ -16,17 +16,17 @@ module.exports = function(grunt) {
   // creation: https://github.com/gruntjs/grunt/blob/devel/docs/toc.md
 
   grunt.registerMultiTask('sencha_dependencies', 'Task to generate the ordered array of sencha depdendencies', function() {
-
-    var options = this.options({});
+    var options, dependencyChecker, filesLoadedSoFar;
+    options = this.options({});
     if (options.appFile && !options.appJs) {
       options.appJs = options.appFile;
     }
     grunt.log.writeln('Processing Sencha app file "' + options.appJs + '"...');
-    var filesLoadedSoFar = new SenchaDependencyChecker(options.appJs, options.senchaDir).getDependencies();
-    // finally push in our app.js
+    dependencyChecker = new SenchaDependencyChecker(options.appJs, options.senchaDir, !!options.isTouch);
+    filesLoadedSoFar = dependencyChecker.getDependencies();
+
     grunt.log.ok('Success! ' + filesLoadedSoFar.length + ' files added to property ' + 'sencha_dependencies_' + this.target);
     grunt.verbose.writeln("Files are:\n    " + filesLoadedSoFar.join('\n    '));
-
     grunt.config.set('sencha_dependencies_' + this.target, filesLoadedSoFar);
   });
 

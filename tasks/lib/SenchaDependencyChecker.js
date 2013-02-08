@@ -1,12 +1,13 @@
 
 var grunt = require('grunt');
 
-function SenchaDependencyChecker(appJsFilePath, senchaDir){
+function SenchaDependencyChecker(appJsFilePath, senchaDir, isTouch){
 	this.appJsFilePath = appJsFilePath;
 	this.lookupPaths = {};
     this.filesLoadedSoFar = [];
     this.beingLoaded = [];
     this.classesSeenSoFar = {};
+    this.isTouch = isTouch;
     if (senchaDir) {
         this.setSenchaDir(senchaDir);
     }
@@ -32,7 +33,8 @@ SenchaDependencyChecker.prototype.mapClassToFile = function (className, dontTest
       currentPackage;
   // let's special case for Ext core stuff
   if (parts[0] === 'Ext' && parts.length === 1) {
-      filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + '/ext-debug.js';
+      filepath = this.isTouch ? '/sencha-touch-debug.js' : '/ext-debug.js';
+      filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
   } else {
       // loop through from the longest package name to find it
       while (currentIndex-- >= 0) {
@@ -129,6 +131,7 @@ SenchaDependencyChecker.prototype.processClassConf = function (name, classConf) 
 };
 
 SenchaDependencyChecker.prototype.defineGlobals = function() {
+    var me = this;
     global.emptyFn = function() {return false;};
     global.window = {
       navigator : 'Linux',
@@ -142,10 +145,14 @@ SenchaDependencyChecker.prototype.defineGlobals = function() {
       documentElement:{style: {boxShadow: undefined}},
       attachEvent: global.emptyFn,
       createElement: global.emptyFn,
-      getElementsByTagName: function() {
-        return [{
-            src: this.senchaDir + '/ext-debug.js'
-        }];
+      getElementsByTagName: function(tagName) {
+        if (tagName === 'script') {
+            return [{
+                src: me.mapClassToFile('Ext')
+            }];
+        } else {
+            return [];
+        }
       }
     };
     global.ActiveXObject = global.emptyFn;
@@ -190,10 +197,11 @@ SenchaDependencyChecker.prototype.defineExtGlobals = function () {
 };
 
 SenchaDependencyChecker.prototype.getDependencies = function () {
+    var senchaCoreFile, contents, src;
     this.defineGlobals();
-    var contents = grunt.file.read(this.senchaDir + '/ext-debug.js');
-    this.filesLoadedSoFar.push(this.senchaDir + '/ext-debug.js');
-
+    this.filesLoadedSoFar.push(senchaCoreFile);
+    senchaCoreFile = this.mapClassToFile('Ext');
+    contents = grunt.file.read(senchaCoreFile);
     try {
         eval(contents);
     } catch (e) {
@@ -201,18 +209,11 @@ SenchaDependencyChecker.prototype.getDependencies = function () {
     }
     global.Ext = Ext;
     this.defineExtGlobals();
-
-    var src = [this.appJsFilePath].map(function(filepath) {
-        // Warn if a source file/pattern was invalid.
-        if (!grunt.file.exists(filepath)) {
-          grunt.log.error('Source file "' + filepath + '" not found.');
-          return '';
-        }
-        // Read file source.
-        return grunt.file.read(filepath);
-    }).join(',');
-    eval(src);
-
+    if (!grunt.file.exists(this.appJsFilePath)) {
+      grunt.log.error('Source file "' + filepath + '" not found.');
+      return [];
+    }
+    eval(grunt.file.read(this.appJsFilePath));
     this.filesLoadedSoFar.push(this.appJsFilePath);
     return this.filesLoadedSoFar;
 };

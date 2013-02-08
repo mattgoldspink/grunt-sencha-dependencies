@@ -54,6 +54,12 @@ Default value: undefined
 
 This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there.
 
+#### options.isTouch
+Type: `Boolean`
+Default value: false
+
+Whether this is a Sencha Touch project or not.
+
 ### Usage Examples
 
 #### Basic example

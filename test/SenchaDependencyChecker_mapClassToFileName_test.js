@@ -33,6 +33,13 @@ exports.sencha_dependencies = {
     // setup here if necessary
     done();
   },
+  Sencha_Touch_is_given_right_file_path: function(test) {
+    test.expect(1);
+    subject.isTouch = true;
+    subject.setSenchaDir('./vendor/ext-4.1.2');
+    assertPathIsCorrect('Ext', './vendor/ext-4.1.2/sencha-touch-debug.js', test);
+    test.done();
+  },
   Ext_is_given_right_file_path: function(test) {
     test.expect(1);
     subject.setSenchaDir('./vendor/ext-4.1.2');
