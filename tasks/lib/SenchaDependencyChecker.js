@@ -117,19 +117,33 @@ SenchaDependencyChecker.prototype.processClassConf = function (name, classConf) 
   }
   if (classConf.uses) {
     if (typeof classConf.uses === "string") {
-      classConf.uses  = [classConf.uses];
+        classConf.uses  = [classConf.uses];
     }
     for (i = 0, len = classConf.uses.length; i < len; i++) {
       this.loadClassFileAndEval(classConf.uses[i]);
     }
   }
-  if (classConf.controllers) {
-    for (i = 0, len = classConf.controllers.length; i < len; i++) {
-      var cName = classConf.controllers[i].split('.').length > 1 ? classConf.controllers[i] : classConf.name + '.controller.' + classConf.controllers[i];
-      this.loadClassFileAndEval(cName);
-    }
+  this.loadAllFilesForProperty('controller', classConf);
+  this.loadAllFilesForProperty('store', classConf);
+  this.loadAllFilesForProperty('model', classConf);
+  if (classConf.autoCreateViewport === true) {
+    var cName = classConf.name + '.view.Viewport';
+    this.loadClassFileAndEval(cName);
   }
 };
+
+SenchaDependencyChecker.prototype.loadAllFilesForProperty = function(propertyname, classConf) {
+    var plurallizedName = propertyname + 's';
+    if (classConf[plurallizedName]) {
+       if (typeof classConf[plurallizedName] === "string") {
+          classConf[plurallizedName]  = [classConf[plurallizedName]];
+      }
+      for (i = 0, len = classConf[plurallizedName].length; i < len; i++) {
+        var cName = classConf[plurallizedName][i].split('.').length > 1 ? classConf[plurallizedName][i] : classConf.name + '.' + propertyname + '.' + classConf[plurallizedName][i];
+        this.loadClassFileAndEval(cName);
+      }
+    }
+}
 
 SenchaDependencyChecker.prototype.defineGlobals = function() {
     var me = this;

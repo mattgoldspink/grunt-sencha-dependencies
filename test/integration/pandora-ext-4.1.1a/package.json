@@ -1,0 +1,16 @@
+{
+  "name": "pandora-ext-4.1.1a",
+  "version": "0.0.0",
+  "description": "ERROR: No README.md file found!",
+  "main": "app/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "devDependencies": {
+    "grunt-contrib-uglify": "~0.1.1rc6",
+    "grunt": "~0.4.0rc7"
+  }
+}
