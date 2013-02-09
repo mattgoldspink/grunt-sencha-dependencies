@@ -143,7 +143,7 @@ SenchaDependencyChecker.prototype.loadAllFilesForProperty = function(propertynam
         this.loadClassFileAndEval(cName);
       }
     }
-}
+};
 
 SenchaDependencyChecker.prototype.defineGlobals = function() {
     var me = this;
