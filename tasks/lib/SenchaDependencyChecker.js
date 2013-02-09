@@ -1,5 +1,6 @@
 
-var grunt = require('grunt');
+var grunt = require('grunt'),
+    domino = require('domino');
 
 function SenchaDependencyChecker(appJsFilePath, senchaDir, isTouch){
 	this.appJsFilePath = appJsFilePath;
@@ -132,31 +133,9 @@ SenchaDependencyChecker.prototype.processClassConf = function (name, classConf) 
 
 SenchaDependencyChecker.prototype.defineGlobals = function() {
     var me = this;
-    global.emptyFn = function() {return false;};
-    global.window = {
-      navigator : 'Linux',
-      attachEvent: global.emptyFn,
-      location: {
-        protocol: 'http'
-      }
-    };
+    global.emptyFn = function() {return {};};
     global.navigator = {'userAgent' : 'node'};
-    global.document = {
-      documentElement:{style: {boxShadow: undefined}},
-      attachEvent: global.emptyFn,
-      createElement: global.emptyFn,
-      getElementsByTagName: function(tagName) {
-        if (tagName === 'script') {
-            return [{
-                src: me.mapClassToFile('Ext')
-            }];
-        } else {
-            return [];
-        }
-      }
-    };
     global.ActiveXObject = global.emptyFn;
-    global.top = {};
     return global;
 };
 
@@ -202,6 +181,9 @@ SenchaDependencyChecker.prototype.getDependencies = function () {
     senchaCoreFile = this.mapClassToFile('Ext');
     this.filesLoadedSoFar.push(senchaCoreFile);
     contents = grunt.file.read(senchaCoreFile);
+    // use domino to mock out our DOM api's
+    global.window = domino.createWindow('<head><script src="' + senchaCoreFile + '"></script></head><body></body>');
+    global.document = window.document;
     try {
         eval(contents);
     } catch (e) {

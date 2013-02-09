@@ -28,6 +28,9 @@
   "scripts": {
     "test": "grunt test"
   },
+  dependencies: {
+    "domino": "~1.0.8"
+  },
   "devDependencies": {
     "grunt-contrib-jshint": "0.1.1rc6",
     "grunt-contrib-clean": "0.4.0rc6",
@@ -35,6 +38,11 @@
     "grunt": "0.4.0rc6"
   },
   "keywords": [
-    "gruntplugin"
+    "gruntplugin",
+    "Sencha",
+    "Ext.js",
+    "Ext",
+    "Sencha Cmd",
+    "Sencha Touch"
   ]
 }

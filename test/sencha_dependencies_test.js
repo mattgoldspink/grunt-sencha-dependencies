@@ -32,14 +32,6 @@ exports.sencha_dependencies = {
     test.ok(SenchaDependencyChecker, "loaded sencha_utils");
     test.done();
   },
-  global_window_created: function(test) {
-    test.expect(3);
-    new SenchaDependencyChecker().defineGlobals();
-    test.ok(global.window, "window created");
-    test.ok(global.window.navigator, "window.navigator created");
-    test.ok(global.window.attachEvent, "window.attachEvent created");
-    test.done();
-  },
   global_navigator_created: function(test) {
     test.expect(2);
     new SenchaDependencyChecker().defineGlobals();
