@@ -9,6 +9,7 @@ function SenchaDependencyChecker(appJsFilePath, senchaDir, isTouch){
     this.beingLoaded = [];
     this.classesSeenSoFar = {};
     this.isTouch = isTouch;
+    this.appName = null;
     if (senchaDir) {
         this.setSenchaDir(senchaDir);
     }
@@ -57,7 +58,7 @@ SenchaDependencyChecker.prototype.mapClassToFile = function (className, dontTest
 };
 
 SenchaDependencyChecker.prototype.loadClassFileAndEval = function(className, onDone) {
-  if (className) {
+  if (className && !this.doesClassExistInGlobalSpace(className)) {
     var loadPath = this.mapClassToFile(className);
     if (loadPath !== '' &&
 		!grunt.util._.contains(this.filesLoadedSoFar, loadPath) &&
@@ -71,6 +72,19 @@ SenchaDependencyChecker.prototype.loadClassFileAndEval = function(className, onD
     onDone();
   }
 };
+
+SenchaDependencyChecker.prototype.doesClassExistInGlobalSpace = function(className) {
+    var parts = className.split('.'),
+        previousPart = global;
+    for (var i = 0, len = parts.length; i < len; i++) {
+      var part = parts[i];
+      if (previousPart[part] === undefined) {
+          return false;
+      }
+      previousPart = previousPart[part] ;
+    }
+    return true;
+}
 
 SenchaDependencyChecker.prototype.defineClassNameSpace = function(className, aliasClassDef) {
   var parts = className.split('.'),
@@ -139,7 +153,7 @@ SenchaDependencyChecker.prototype.loadAllFilesForProperty = function(propertynam
           classConf[plurallizedName]  = [classConf[plurallizedName]];
       }
       for (i = 0, len = classConf[plurallizedName].length; i < len; i++) {
-        var cName = classConf[plurallizedName][i].split('.').length > 1 ? classConf[plurallizedName][i] : classConf.name + '.' + propertyname + '.' + classConf[plurallizedName][i];
+        var cName = classConf[plurallizedName][i].split('.').length > 1 ? classConf[plurallizedName][i] : this.appName + '.' + propertyname + '.' + classConf[plurallizedName][i];
         this.loadClassFileAndEval(cName);
       }
     }
@@ -180,6 +194,7 @@ SenchaDependencyChecker.prototype.defineExtGlobals = function () {
       },
       application: function(config) {
         me.lookupPaths[config.name] = './app';
+        me.appName = config.name;
         me.processClassConf(config.name, config);
       },
       define: function(name, conf) {
