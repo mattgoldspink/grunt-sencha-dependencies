@@ -28,7 +28,7 @@
   "scripts": {
     "test": "grunt test"
   },
-  dependencies: {
+  "dependencies": {
     "domino": "~1.0.8"
   },
   "devDependencies": {
