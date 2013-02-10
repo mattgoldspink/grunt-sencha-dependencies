@@ -35,7 +35,20 @@ exports.sencha_dependencies = {
       './test/integration/pandora-ext-4.1.1a/'
     );
     var found = depChecker.getDependencies();
-    test.equal(found.length, 225, "Expected 221 files to be found");
+    test.equal(found.length, 225, "Expected 225 files to be found");
+
+    test.done();
+  },
+  "stockapp-senchatouch-2.1.1": function(test) {
+    test.expect(1);
+    var depChecker = new SenchaDependencyChecker(
+      './test/integration/stockapp-senchatouch-2.1.1/app.js',
+      './test/integration/libs/touch-2.1.1',
+      './test/integration/stockapp-senchatouch-2.1.1/',
+      true
+    );
+    var found = depChecker.getDependencies();
+    test.equal(found.length, 163, "Expected 163 files to be found");
 
     test.done();
   }

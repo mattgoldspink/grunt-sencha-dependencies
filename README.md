@@ -164,4 +164,5 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 
 ## Release History
 
+- 0.2.5 - Initial Touch support - tested against the Sencha Stock App - likely still bugs with other apps though
 - 0.2.4 - Fixed bugs which prevented it working on the Ext.js Pandora example MVC application and added some new properties to help with debugging
