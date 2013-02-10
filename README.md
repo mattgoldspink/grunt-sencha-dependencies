@@ -64,11 +64,23 @@ Default value: undefined
 
 This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there.
 
+#### options.pageRoot
+Type: `String`
+Default value: current directory
+
+If your index.html is in a sub directory then set this to that directory.
+
 #### options.isTouch
 Type: `Boolean`
 Default value: false
 
 Whether this is a Sencha Touch project or not.
+
+#### options.printDepGraph
+Type: `Boolean`
+Default value: false
+
+If you think things aren't being resolved correctly you can set this to true as the task runs it will print a full depdency graph as it comes across classes. In addition you should use the ```--verbose``` flag built into grunt which will also show you the files the task found in the order they will be used by the next task.
 
 ### Usage Examples
 
@@ -141,8 +153,15 @@ grunt.loadNpmTasks('grunt-sencha-dependencies');
 grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
 ```
 
+## Larger example
+
+Included in the repository is a copy of the Ext.js Pandora application which they use to showcase their MVC walkthroughs. This can be found under ```tests/integration/pandora-ext-4.1.1a``` and should be a fully working example.
+
+NOTE: Their example does not manage it's dependencies correctly as it does not declare a few files upfront (notably Ext.container.ButtonGroup). I've left the example broken like this so I can do a "like for like" comparison of the resulting file list. However the build file for the example does copy over the whole of the ext.js lib anway to keep the example working when it is built and minified.
+
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [grunt][].
 
 ## Release History
-_(Nothing yet)_
+
+- 0.2.4 - Fixed bugs which prevented it working on the Ext.js Pandora example MVC application and added some new properties to help with debugging
