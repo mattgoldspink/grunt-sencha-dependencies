@@ -13,7 +13,8 @@ module.exports = function(grunt) {
         uglify: {
             app: {
               options: {
-                sourceMap: 'dest/source-map.js'
+                sourceMap: 'dest/source-map.js',
+                compress: false
               },
               files: {
                 'dest/output.min.js': ['<%= sencha_dependencies_app %>']

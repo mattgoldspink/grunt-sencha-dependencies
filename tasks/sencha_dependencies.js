@@ -17,12 +17,15 @@ module.exports = function(grunt) {
 
   grunt.registerMultiTask('sencha_dependencies', 'Task to generate the ordered array of sencha depdendencies', function() {
     var options, dependencyChecker, filesLoadedSoFar;
-    options = this.options({});
+    options = this.options({
+      isTouch: false,
+      printDepGraph: false
+    });
     if (options.appFile && !options.appJs) {
       options.appJs = options.appFile;
     }
     grunt.log.writeln('Processing Sencha app file "' + options.appJs + '"...');
-    dependencyChecker = new SenchaDependencyChecker(options.appJs, options.senchaDir, !!options.isTouch);
+    dependencyChecker = new SenchaDependencyChecker(options.appJs, options.senchaDir, options.pageRoot, !!options.isTouch, !!options.printDepGraph);
     filesLoadedSoFar = dependencyChecker.getDependencies();
 
     grunt.log.ok('Success! ' + filesLoadedSoFar.length + ' files added to property ' + 'sencha_dependencies_' + this.target);
