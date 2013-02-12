@@ -29,7 +29,8 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "domino": "1.0.8"
+    "domino": "1.0.8",
+    "node-promise": "0.5.5"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "0.1.1rc6",

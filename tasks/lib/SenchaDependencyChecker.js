@@ -1,16 +1,12 @@
 var grunt = require('grunt'),
-    domino = require('domino');
+    domino = require('domino'),
+    select = require('../../node_modules/domino/lib/select.js'),
+    DocumentFragment = require('../../node_modules/domino/lib/DocumentFragment.js'),
+    NodeList = require('../../node_modules/domino/lib/NodeList.js');
 
 function SenchaDependencyChecker(appJsFilePath, senchaDir, pageRoot, isTouch, printDepGraph){
     this.appJsFilePath = appJsFilePath;
-    this.lookupPaths = {};
-    this.filesLoadedSoFar = [];
-    this.usesList = [];
-    this.beingLoaded = [];
     this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : '.';
-    this.classesSeenSoFar = {
-        asArray: []
-    };
     this.printDepGraph = !!printDepGraph;
     this.isTouch = !!isTouch;
     this.appName = null;
@@ -23,199 +19,12 @@ function removeTrailingSlash(path) {
     return path[path.length - 1] === '/' ? path.substring(0, path.length - 1) : path;
 }
 
-SenchaDependencyChecker.prototype.addLookupPath = function(key, value) {
-    this.lookupPaths[key] = removeTrailingSlash(value);
-};
-
 SenchaDependencyChecker.prototype.setSenchaDir = function(_senchaDir){
     this.senchaDir = _senchaDir;
-    this.addLookupPath('Ext', removeTrailingSlash(_senchaDir) + '/src');
 };
 
-SenchaDependencyChecker.prototype.mapClassToFile = function (className, dontTestExistance) {
-  var parts = className.split('.'),
-      filepath,
-      currentIndex = parts.length + 1,
-      currentPackage;
-  // let's special case for Ext core stuff
-  if (parts[0] === 'Ext' && parts.length === 1) {
-      filepath = this.isTouch ? '/sencha-touch-debug.js' : '/ext-debug.js';
-      filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
-  } else {
-      // loop through from the longest package name to find it
-      while (currentIndex-- >= 0) {
-        currentPackage = parts.slice(0, currentIndex).join('.');
-        if (this.lookupPaths[currentPackage]) {
-            filepath = this.lookupPaths[currentPackage] + (currentIndex === parts.length ?
-                          '' : '/' + parts.slice(currentIndex, parts.length).join('/') + '.js');
-            break;
-        }
-      }
-  }
-  if (filepath === undefined) {
-    filepath = parts.join('/') + '.js';
-  }
-  if (!grunt.file.exists(filepath) && !dontTestExistance) {
-    grunt.log.warn('Source file "' + filepath + '" not found.');
-    return '';
-  }
-  return filepath;
-};
-
-var currentDepth = [" "];
-
-SenchaDependencyChecker.prototype.loadClassFileAndEval = function(className, onDone) {
-  if (className && !this.doesClassExistInGlobalSpace(className)) {
-    var loadPath = this.mapClassToFile(className);
-    if (loadPath !== '' &&
-		!grunt.util._.contains(this.filesLoadedSoFar, loadPath) &&
-		!grunt.util._.contains(this.beingLoaded, loadPath)) {
-      currentDepth.push(" ");
-      if (this.printDepGraph) {
-        grunt.log.writeln(currentDepth.join("") + className);
-      }
-      this.beingLoaded.push(loadPath);
-      try {
-          eval(grunt.file.read(loadPath));
-      } catch (e) {
-          grunt.log.warn('An error occured whilst loading class ' + className + ' - ' + e);
-      }
-      this.filesLoadedSoFar.push(loadPath);
-      currentDepth.pop();
-    }
-  }
-  if (onDone) {
-    onDone();
-  }
-};
-
-SenchaDependencyChecker.prototype.doesClassExistInGlobalSpace = function(className) {
-    var parts = className.split('.'),
-        previousPart = global;
-    for (var i = 0, len = parts.length; i < len; i++) {
-      var part = parts[i];
-      if (previousPart[part] === undefined) {
-          return false;
-      }
-      previousPart = previousPart[part] ;
-    }
-    return true;
-};
-
-SenchaDependencyChecker.prototype.defineClassNameSpace = function(className, aliasClassDef) {
-  var parts = className.split('.'),
-      previousPart = global;
-  if (!this.classesSeenSoFar[className]) {
-  }
-  for (var i = 0, len = parts.length; i < len; i++) {
-    var part = parts[i];
-    if (previousPart[part] === undefined) {
-      previousPart[part] = (i === (len - 1) && aliasClassDef ? aliasClassDef : {});
-    }
-    previousPart = previousPart[part] ;
-  }
-  this.classesSeenSoFar[className] = true;
-  this.classesSeenSoFar.asArray.push(className);
-  return previousPart;
-};
-
-SenchaDependencyChecker.prototype.processClassConf = function (name, classConf) {
-  var singletonConf = {}, i, len, prop, classDef;
-  if (classConf.singleton) {
-    for ( prop in classConf) {
-        singletonConf[prop] = global.emptyFn;
-    }
-  }
-  if (classConf.statics) {
-    for ( prop in classConf.statics) {
-        //singletonConf[prop] = classConf.statics[prop];
-    }
-  }
-   classDef = this.defineClassNameSpace(name, singletonConf);
-  if (classConf.alternateClassName) {
-    if (typeof classConf.alternateClassName === "string") {
-      classConf.alternateClassName  = [classConf.alternateClassName];
-    }
-    for (i = 0, len = classConf.alternateClassName.length; i < len; i++) {
-      this.defineClassNameSpace(classConf.alternateClassName[i], classDef);
-    }
-  }
-  if (classConf.extend) {
-    this.loadClassFileAndEval(classConf.extend);
-  }
-  if (classConf.requires) {
-    if (typeof classConf.requires === "string") {
-      classConf.requires  = [classConf.requires];
-    }
-    for (i = 0, len = classConf.requires.length; i < len; i++) {
-      if (/\*/.test(classConf.requires[i])) {
-        // bulk load all matching files
-        this.loadAllClassesThatMatch(classConf.requires[i]);
-      } else {
-        this.loadClassFileAndEval(classConf.requires[i]);
-      }
-    }
-  }
-  this.loadAllFilesForProperty('controller', classConf);
-  this.loadAllFilesForProperty('store', classConf);
-  this.loadAllFilesForProperty('model', classConf);
-  this.loadAllFilesForProperty('view', classConf);
-  if (classConf.autoCreateViewport === true) {
-    var cName = classConf.name + '.view.Viewport';
-    this.loadClassFileAndEval(cName);
-  }
-  if (classConf.mixins) {
-    for ( prop in classConf.mixins) {
-        this.loadClassFileAndEval(classConf.mixins[prop]);
-    }
-  }
-  // uses should always be done later
-  if (classConf.uses) {
-    if (typeof classConf.uses === "string") {
-        classConf.uses  = [classConf.uses];
-    }
-    for (i = 0, len = classConf.uses.length; i < len; i++) {
-      this.usesList.push(classConf.uses[i]);
-    }
-  }
-};
-
-SenchaDependencyChecker.prototype.handleSenchaTouchClassDef = function(classConf) {
-  // it uses factory of factories to load stuff, so lets emulate that
-  var prop, value;
-  for (prop in classConf) {
-    value = classConf[prop];
-    if (Ext.isSimpleObject(value)) {
-      this.handleSenchaTouchClassDef(value);
-    } else if (prop === 'xclass') {
-      this.loadClassFileAndEval(value);
-      classConf[prop] = Ext.create(value);
-    }
-  }
-};
-
-SenchaDependencyChecker.prototype.loadAllClassesThatMatch = function(classPath) {
-    if (this.isTouch) {
-      var classes = Ext.ClassManager.getNamesByExpression(classPath);
-      for (var i = 0, len = classes.length; i < len; i++) {
-        this.loadClassFileAndEval(classes[i]);
-      }
-    }
-};
-
-SenchaDependencyChecker.prototype.loadAllFilesForProperty = function(propertyname, classConf) {
-    var plurallizedName = propertyname + 's', i, len, cName;
-    if (classConf[plurallizedName]) {
-       if (typeof classConf[plurallizedName] === "string") {
-          classConf[plurallizedName]  = [classConf[plurallizedName]];
-      }
-      for (i = 0, len = classConf[plurallizedName].length; i < len; i++) {
-         cName = classConf[plurallizedName][i].split('.').length > 1 ?
-                        classConf[plurallizedName][i] :
-                        this.appName + '.' + propertyname + '.' + classConf[plurallizedName][i];
-        this.loadClassFileAndEval(cName);
-      }
-    }
+SenchaDependencyChecker.prototype.getSenchaCoreFile = function(){
+    return this.senchaDir  + "/" + (this.isTouch ? 'sencha-touch-debug.js' : 'ext-debug.js');
 };
 
 SenchaDependencyChecker.prototype.defineGlobals = function() {
@@ -224,102 +33,154 @@ SenchaDependencyChecker.prototype.defineGlobals = function() {
     global.navigator = {'userAgent' : 'node'};
     global.location = window.location;
     global.ActiveXObject = global.emptyFn;
+    global.window.localStorage = {
+      get: global.emptyFn,
+      set: global.emptyFn,
+      clear: global.emptyFn,
+      length: 0
+    };
+    global.XMLHttpRequest = function() {
+      var contents = '';
+      return {
+        send: global.emptyFn,
+        open: function(type, url) {
+          url = url.replace(/\?.*/, '');
+          //console.log(url);
+          url = me.pageRoot  + '/' + url;
+          if (!grunt.file.exists(url)) {
+            grunt.log.error('WARNING: Source file "' + url + '" not found.');
+            this.status = 404;
+          } else {
+            this.responseText = grunt.file.read(url);
+            this.status = 200;
+          }
+        }
+      }
+    };
     return global;
 };
 
-SenchaDependencyChecker.prototype.defineExtGlobals = function () {
-	var me = this;
-	global.Ext.apply(global.Ext, {
-      Loader: {
-        setConfig: function(obj) {
-          if (obj.paths) {
-            global.Ext.Loader.setPaths(obj.paths);
-          }
-        },
-        setPaths: function(key, value) {
-            if (global.Ext.isString(key)) {
-                me.addLookupPath(key, value);
-            } else {
-                for (var prop in key) {
-                    me.addLookupPath(prop, key[prop]);
-                }
-            }
-        }
-      },
-      syncRequire: function() {
-          Ext.require.apply(Ext, arguments);
-      },
-      require: function(reqs, fn) {
-        if (typeof reqs === "string") {
-          reqs = [reqs];
-        }
-        for (var i = 0, len = reqs.length; i < len; i++) {
-          me.loadClassFileAndEval(reqs[i]);
-        }
-        //fn();
-      },
-      application: function(config) {
-        me.lookupPaths[config.name] = me.pageRoot + '/app';
-        me.appName = config.name;
-        if (me.isTouch) {
-          var reqs = config.requires;
-          try {
-            Ext.setup(config);
-            Ext.triggerReady();
-          } catch (e) {
-            grunt.log.warn("An unexpected error occured, please report a bug here if problems occur in your app" +
-                               "https://github.com/mattgoldspink/grunt-sencha-dependencies/issues?state=open - " + e);
-          }
-          config.requires = reqs;
-        }
-        me.processClassConf(config.name, config);
-        me.loadClassFileAndEval('Ext.app.Application');
-        while (me.usesList.length > 0) {
-          me.loadClassFileAndEval(me.usesList.pop());
-        }
-      },
-      define: function(name, conf) {
-        me.processClassConf(name, conf);
-        Ext.ClassManager.create(name, conf);
-      },
-      factoryConfig: function(config, fn) {
-        me.handleSenchaTouchClassDef(config);
-        fn(config);
+SenchaDependencyChecker.prototype.fixMissingDomApis = function() {
+  DocumentFragment.prototype.querySelector = function(selector) {
+      return select(selector, this)[0];
+  };
+  DocumentFragment.prototype.querySelectorAll = function(selector) {
+      var self = this;
+      if (!this.parentNode) {
+        self = this.ownerDocument.createElement("div");
+        self.appendChild(this);
       }
-    });
-    return global.Ext;
+      var nodes = select(selector, self);
+      return nodes.item ? nodes : new NodeList(nodes);
+  };
+};
+
+SenchaDependencyChecker.prototype.defineExtGlobals = function (Ext) {
+  var me = this;
+  global.Ext = Ext;
+  Ext.Loader._loadScriptFile = Ext.Loader.loadScriptFile;
+  Ext.Loader.loadScriptFile = function(url, onLoad, onError, scope, synchronous) {
+      //convert all to sync
+      Ext.Loader._loadScriptFile.apply(Ext.Loader, [url, onLoad, onError, scope, true]);
+      me.addPatchesToExtToRun(Ext);
+  };
+  Ext._application = Ext.application;
+  Ext.application = function(conf) {
+      conf._launch = conf.launch;
+      conf.launch = function() {};
+      Ext._application.apply(Ext, arguments);
+  };
+  if (this.isTouch) {
+      Ext.browser.engineVersion =  new Ext.Version('1.0');
+  }
+  Ext.Loader.setPath('Ext', removeTrailingSlash(this.senchaDir) + '/src');
+  return global.Ext;
+};
+
+var id = 0;
+
+SenchaDependencyChecker.prototype.addPatchesToExtToRun = function(Ext) {
+  if (!this.isTouch) {
+    // fix getStyle and undefined for background-position - util/Renderable.js
+    var _getStyle = Ext.Element.prototype.getStyle;
+    Ext.Element.prototype.getStyle = function(prop) {
+      var result = _getStyle.apply(this, arguments);
+      if (prop === 'background-position' && result === undefined) {
+        return '0 0';
+      }
+      return result;
+    }
+    // fix getViewportHeight not having reference to 'self' - ext-debug.js
+    global.self = global.document;
+    // prevent Layout's being run
+    if (Ext.layout && Ext.layout.Context) {
+      Ext.layout.Context.prototype.invalidate = Ext.emptyFn;
+    }
+  } else {
+    if (Ext.AbstractComponent) {
+      /*Ext.AbstractComponent.prototype.initElement = function() {
+        var el = document.createDocumentFragment();
+        el.id = id++;
+        this.element = new Ext.Element(el);
+        return this;
+      };*/
+    }
+  }
+};
+
+SenchaDependencyChecker.prototype.reOrderFiles = function() {
+  var history = Ext.Loader.history,
+      files = [this.getSenchaCoreFile()];
+  for (var i = 0, len = history.length; i < len; i++) {
+    files.push(Ext.Loader.getPath(history[i]));
+  }
+  files.push(this.appJsFilePath);
+  return files;
+};
+
+SenchaDependencyChecker.prototype.safelyEvalFile = function(fileUrl) {
+  if (!grunt.file.exists(fileUrl)) {
+    grunt.log.error('Source file "' + fileUrl + '" not found.');
+  }
+  try {
+      eval(grunt.file.read(fileUrl));
+  } catch (e) {
+      grunt.log.error("An unexpected error occured while processing " + fileUrl + ", please report a bug here if problems occur in your app " +
+                  "https://github.com/mattgoldspink/grunt-sencha-dependencies/issues?state=open - " + e);
+      if (e.stack) {
+          grunt.log.error("Stack for debugging: \n" + e.stack);
+      }
+      throw e;
+  }
+  return Ext;
 };
 
 SenchaDependencyChecker.prototype.getDependencies = function () {
-    var senchaCoreFile, contents, src;
-    senchaCoreFile = this.mapClassToFile('Ext');
-    this.filesLoadedSoFar.push(senchaCoreFile);
-    contents = grunt.file.read(senchaCoreFile);
-    // use domino to mock out our DOM api's
-    global.window = domino.createWindow('<head><script src="' + senchaCoreFile + '"></script></head><body></body>');
-    global.document = window.document;
-    this.defineGlobals();
+    debugger
     try {
-        eval(contents);
+      var senchaCoreFile = this.getSenchaCoreFile();
+      // use domino to mock out our DOM api's
+      global.window = domino.createWindow('<html><head><script src="' + senchaCoreFile + '"></script></head><body></body></html>');
+      global.document = window.document;
+      this.defineGlobals();
+      this.fixMissingDomApis();
+      var Ext = this.safelyEvalFile(senchaCoreFile);
+      this.defineExtGlobals(Ext);
+      this.addPatchesToExtToRun(Ext);
+      window.document.close();
+      this.safelyEvalFile(this.appJsFilePath);
+      if (!Ext.isTouch) {
+        Ext.EventManager.deferReadyEvent = null;
+        Ext.EventManager.fireReadyEvent()
+      }
+      return this.reOrderFiles();
     } catch (e) {
-        grunt.log.error("An unexpected error occured, please report a bug here if problems occur in your app " +
-                    "https://github.com/mattgoldspink/grunt-sencha-dependencies/issues?state=open - " + e);
+      grunt.log.error("An error occured which could cause problems " + e);
+      if (e.stack) {
+          grunt.log.error("Stack for debugging: \n" + e.stack);
+      }
+      throw e;
     }
-    global.Ext = Ext;
-    this.defineExtGlobals();
-    if (!grunt.file.exists(this.appJsFilePath)) {
-      grunt.log.error('Source file "' + filepath + '" not found.');
-      return [];
-    }
-    try {
-      eval(grunt.file.read(this.appJsFilePath));
-    } catch (e) {
-        grunt.log.warn("An unexpected error occured, please report a bug here if problems occur in your app " +
-                    "https://github.com/mattgoldspink/grunt-sencha-dependencies/issues?state=open - " + e);
-    }
-    this.filesLoadedSoFar.push(this.appJsFilePath);
-    //grunt.log.writeln("'" + this.classesSeenSoFar.asArray.join(',') + "'");
-    return this.filesLoadedSoFar;
 };
 
 module.exports = SenchaDependencyChecker;

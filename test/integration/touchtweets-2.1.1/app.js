@@ -1,21 +1,16 @@
+//<debug>
 Ext.Loader.setPath({
     'Ext': '../libs/touch-2.1.1/src'
 });
+//</debug>
+
 Ext.application({
-    name: 'StockApp',
+    name: 'Twitter',
+    requires: ['Twitter.proxy.Twitter'],
 
-    requires: [
-        'Ext.MessageBox'
-    ],
-
-    views: ['Main'],
-
-    controllers: ['Main'],
-
-    stores: [
-        'Apple',
-        'Google'
-    ],
+    profiles: ['Phone', 'Tablet'],
+    models: ['Search', 'Tweet'],
+    stores: ['Searches'],
 
     startupImage: {
         '320x460': 'resources/startup/Default.jpg', // Non-retina iPhone, iPod touch, and all Android devices
@@ -28,22 +23,16 @@ Ext.application({
     },
 
     isIconPrecomposed: false,
-    icon: 'resources/icons/icon.png',
-
-    launch: function () {
-        // Initialize the main view
-        Ext.Viewport.add(Ext.create('StockApp.view.Main'));
+    icon: {
+        57: 'resources/icons/icon.png',
+        72: 'resources/icons/icon@72.png',
+        114: 'resources/icons/icon@2x.png',
+        144: 'resources/icons/icon@144.png'
     },
 
-    onUpdated: function () {
-        Ext.Msg.confirm(
-            "Application Update",
-            "This application has just successfully been updated to the latest version. Reload now?",
-            function (buttonId) {
-                if (buttonId === 'yes') {
-                    window.location.reload();
-                }
-            }
-        );
+    launch: function() {
+        debugger
+        Ext.getBody().removeCls('loading');
     }
 });
+
