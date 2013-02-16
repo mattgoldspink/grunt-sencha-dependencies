@@ -2,6 +2,8 @@ var grunt = require('grunt'),
     domino = require('domino'),
     select = require('../../node_modules/domino/lib/select.js'),
     DocumentFragment = require('../../node_modules/domino/lib/DocumentFragment.js'),
+    Node = require('../../node_modules/domino/lib/Node.js'),
+    Element = require('../../node_modules/domino/lib/Element.js'),
     NodeList = require('../../node_modules/domino/lib/NodeList.js');
 
 function SenchaDependencyChecker(appJsFilePath, senchaDir, pageRoot, isTouch, printDepGraph){
@@ -34,18 +36,31 @@ SenchaDependencyChecker.prototype.defineGlobals = function() {
     global.location = window.location;
     global.ActiveXObject = global.emptyFn;
     global.window.localStorage = {
-      get: global.emptyFn,
-      set: global.emptyFn,
-      clear: global.emptyFn,
-      length: 0
-    };
+        getItem: function (sKey) {
+          if (!sKey || !this[sKey]) { return null; }
+          return this[sKey];
+        },
+        key: function (nKeyId) {
+          return nKeyId;
+        },
+        setItem: function (sKey, sValue) {
+          if(!sKey) { return; }
+          this[sKey] = typeof sValue === "string" ? sValue : JSON.stringify(sValue);
+          this.length++;
+        },
+        length: 0,
+        removeItem: function (sKey) {
+          if (!sKey || !this[sKey]) { return; }
+          delete this[sKey];
+          this.length--;
+        }
+      };
     global.XMLHttpRequest = function() {
       var contents = '';
       return {
         send: global.emptyFn,
         open: function(type, url) {
           url = url.replace(/\?.*/, '');
-          //console.log(url);
           url = me.pageRoot  + '/' + url;
           if (!grunt.file.exists(url)) {
             grunt.log.error('WARNING: Source file "' + url + '" not found.');
@@ -55,7 +70,7 @@ SenchaDependencyChecker.prototype.defineGlobals = function() {
             this.status = 200;
           }
         }
-      }
+      };
     };
     return global;
 };
@@ -66,12 +81,56 @@ SenchaDependencyChecker.prototype.fixMissingDomApis = function() {
   };
   DocumentFragment.prototype.querySelectorAll = function(selector) {
       var self = this;
-      if (!this.parentNode) {
+      if (!this.parentNode && this.nodeType !== 11) {
         self = this.ownerDocument.createElement("div");
         self.appendChild(this);
       }
       var nodes = select(selector, self);
-      return nodes.item ? nodes : new NodeList(nodes);
+      var result = nodes.item ? nodes : new NodeList(nodes);
+      return result;
+  };
+  DocumentFragment.prototype.getElementsByTagName = function(tagName) {
+    return Element.prototype.getElementsByTagName.apply(this, arguments);
+  };
+  DocumentFragment.prototype.getElementsByClassName = function(tagName) {
+    return Element.prototype.getElementsByClassName.apply(this, arguments);
+  };
+  DocumentFragment.prototype.firstElementChild = function() {
+    var kids = this.childNodes;
+    for(var i = 0, n = kids.length; i < n; i++) {
+      if (kids[i].nodeType === Node.ELEMENT_NODE) return kids[i];
+    }
+    return null;
+  };
+  DocumentFragment.prototype.nextElementSibling = function() {
+      if (this.parentNode) {
+        var sibs = this.parentNode.childNodes;
+        for(var i = this.index+1, n = sibs.length; i < n; i++) {
+          if (sibs[i].nodeType === Node.ELEMENT_NODE) return sibs[i];
+        }
+      }
+      return null;
+  };
+  DocumentFragment.prototype.nextElement = function(tagName) {
+    var next = this.firstElementChild() || this.nextElementSibling();
+    if (next) return next;
+
+    if (!root) root = this.ownerDocument.documentElement;
+
+    // If we can't go down or across, then we have to go up
+    // and across to the parent sibling or another ancestor's
+    // sibling.  Be careful, though: if we reach the root
+    // element, or if we reach the documentElement, then
+    // the traversal ends.
+    for(var parent = this.parentElement;
+      parent && parent !== root;
+      parent = parent.parentElement) {
+
+      next = parent.nextElementSibling;
+      if (next) return next;
+    }
+
+    return null;
   };
 };
 
@@ -109,21 +168,17 @@ SenchaDependencyChecker.prototype.addPatchesToExtToRun = function(Ext) {
         return '0 0';
       }
       return result;
-    }
+    };
     // fix getViewportHeight not having reference to 'self' - ext-debug.js
     global.self = global.document;
     // prevent Layout's being run
     if (Ext.layout && Ext.layout.Context) {
       Ext.layout.Context.prototype.invalidate = Ext.emptyFn;
     }
+
   } else {
-    if (Ext.AbstractComponent) {
-      /*Ext.AbstractComponent.prototype.initElement = function() {
-        var el = document.createDocumentFragment();
-        el.id = id++;
-        this.element = new Ext.Element(el);
-        return this;
-      };*/
+    if (Ext.draw && Ext.draw.engine && Ext.draw.engine.Canvas) {
+      Ext.draw.engine.Canvas.prototype.createCanvas = Ext.emptyFn;
     }
   }
 };
@@ -155,9 +210,13 @@ SenchaDependencyChecker.prototype.safelyEvalFile = function(fileUrl) {
   return Ext;
 };
 
+SenchaDependencyChecker.prototype.resetGlobals = function() {
+  global.Ext = global.window = global.document =  undefined;
+};
+
 SenchaDependencyChecker.prototype.getDependencies = function () {
-    debugger
     try {
+      //this.resetGlobals();
       var senchaCoreFile = this.getSenchaCoreFile();
       // use domino to mock out our DOM api's
       global.window = domino.createWindow('<html><head><script src="' + senchaCoreFile + '"></script></head><body></body></html>');
@@ -169,11 +228,13 @@ SenchaDependencyChecker.prototype.getDependencies = function () {
       this.addPatchesToExtToRun(Ext);
       window.document.close();
       this.safelyEvalFile(this.appJsFilePath);
-      if (!Ext.isTouch) {
+      if (!this.isTouch) {
         Ext.EventManager.deferReadyEvent = null;
-        Ext.EventManager.fireReadyEvent()
+        Ext.EventManager.fireReadyEvent();
       }
-      return this.reOrderFiles();
+      var files = this.reOrderFiles();
+      //this.resetGlobals();
+      return files;
     } catch (e) {
       grunt.log.error("An error occured which could cause problems " + e);
       if (e.stack) {
