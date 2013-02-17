@@ -10,7 +10,12 @@
 
 module.exports = function(grunt) {
 
-  var SenchaDependencyChecker = require('./lib/SenchaDependencyChecker.js');
+  var DynamicHeadlessBrowserEmulator = require('./lib/DynamicHeadlessBrowserEmulator.js'),
+      DynamicAnalyserMockingExtSystem = require('./lib/DynamicAnalyserMockingExtSystem.js'),
+      modes = {
+        'dynHeadless' :  DynamicHeadlessBrowserEmulator,
+        'dynMock' : DynamicAnalyserMockingExtSystem
+      };
 
   // Please see the grunt documentation for more information regarding task
   // creation: https://github.com/gruntjs/grunt/blob/devel/docs/toc.md
@@ -19,13 +24,14 @@ module.exports = function(grunt) {
     var options, dependencyChecker, filesLoadedSoFar;
     options = this.options({
       isTouch: false,
-      printDepGraph: false
+      printDepGraph: false,
+      mode: 'dynHeadless'
     });
     if (options.appFile && !options.appJs) {
       options.appJs = options.appFile;
     }
-    grunt.log.writeln('Processing Sencha app file "' + options.appJs + '"...');
-    dependencyChecker = new SenchaDependencyChecker(options.appJs, options.senchaDir, options.pageRoot, !!options.isTouch, !!options.printDepGraph);
+    grunt.log.writeln('Processing Sencha app file "' + options.appJs + '" in mode ' + options.mode + '...');
+    dependencyChecker = new modes[options.mode](options.appJs, options.senchaDir, options.pageRoot, !!options.isTouch, !!options.printDepGraph);
     filesLoadedSoFar = dependencyChecker.getDependencies();
 
     grunt.log.ok('Success! ' + filesLoadedSoFar.length + ' files added to property ' + 'sencha_dependencies_' + this.target);

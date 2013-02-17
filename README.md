@@ -70,6 +70,15 @@ Default value: current directory
 
 If your index.html is in a sub directory then set this to that directory.
 
+#### options.mode
+Type: `String`
+Default value: dynHeadless
+
+One of `dynHeadless` or `dynMock` - This tells the task which strategy to use to figure out the dependencies.
+
+- `dynHeadless` - will try to run the whole app in a headless browser and intercept the Ext.application.launch call. This is usually the most accurate, but it's also possible that it may break if your code does too much dynamic or depends on some certain browser api's which aren't available. If you find your app doesn't compile correctly in this mode then try `dynMock`
+- `dynMock` - will try to run the app.js file but it intercepts all the calls to Ext.js/Sencha Touch class creation and loading api's. This means we don't try to run too many pieces of unnecessary code which could cause breaks.
+
 #### options.isTouch
 Type: `Boolean`
 Default value: false
@@ -81,6 +90,8 @@ Type: `Boolean`
 Default value: false
 
 If you think things aren't being resolved correctly you can set this to true as the task runs it will print a full depdency graph as it comes across classes. In addition you should use the ```--verbose``` flag built into grunt which will also show you the files the task found in the order they will be used by the next task.
+
+NOTE: this only works in `dynMock` mode at the moment.
 
 ### Usage Examples
 

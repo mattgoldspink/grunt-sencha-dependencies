@@ -186,11 +186,11 @@ Ext.define('Ext.util.Observable', {
      * (a non-zero number) and falsy (0 or undefined). They do not represent an exact count
      * of listeners. The value for an event is truthy if the event must be fired and is
      * falsy if there is no need to fire the event.
-     * 
+     *
      * The intended use of this property is to avoid the expense of fireEvent calls when
      * there are no listeners. This can be particularly helpful when one would otherwise
      * have to call fireEvent hundreds or thousands of times. It is used like this:
-     * 
+     *
      *      if (this.hasListeners.foo) {
      *          this.fireEvent('foo', this, arg1);
      *      }

@@ -31,7 +31,6 @@ Ext.application({
     },
 
     launch: function() {
-        debugger
         Ext.getBody().removeCls('loading');
     }
 });
