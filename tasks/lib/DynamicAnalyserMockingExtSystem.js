@@ -234,10 +234,10 @@ DynamicAnalyserMockingExtSystem.prototype.defineExtGlobals = function () {
         loader = global.Ext.apply(global.Ext.Loader, {
         setConfig: function(obj) {
           if (obj.paths) {
-            global.Ext.Loader.setPaths(obj.paths);
+            global.Ext.Loader.setPath(obj.paths);
           }
         },
-        setPaths: function(key, value) {
+        setPath: function(key, value) {
             if (global.Ext.isString(key)) {
                 me.addLookupPath(key, value);
             } else {
