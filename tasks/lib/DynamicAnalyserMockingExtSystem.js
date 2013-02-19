@@ -51,20 +51,20 @@ DynamicAnalyserMockingExtSystem.prototype.mapClassToFile = function (className, 
   // let's special case for Ext core stuff
   if (parts[0] === 'Ext' && parts.length === 1) {
       filepath = this.isTouch ? '/sencha-touch-debug.js' : '/ext-debug.js';
-      filepath = this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
+      filepath = this.pageRoot + '/' + this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
   } else {
       // loop through from the longest package name to find it
       while (currentIndex-- >= 0) {
         currentPackage = parts.slice(0, currentIndex).join('.');
         if (this.lookupPaths[currentPackage]) {
-            filepath = this.lookupPaths[currentPackage] + (currentIndex === parts.length ?
+            filepath = this.pageRoot + '/' + this.lookupPaths[currentPackage] + (currentIndex === parts.length ?
                           '' : '/' + parts.slice(currentIndex, parts.length).join('/') + '.js');
             break;
         }
       }
   }
   if (filepath === undefined) {
-    filepath = parts.join('/') + '.js';
+    filepath = this.pageRoot + '/' + parts.join('/') + '.js';
   }
   if (!grunt.file.exists(filepath) && !dontTestExistance) {
     grunt.log.warn('Source file "' + filepath + '" not found.');
@@ -261,7 +261,7 @@ DynamicAnalyserMockingExtSystem.prototype.defineExtGlobals = function () {
         }
       },
       application: function(config) {
-        me.lookupPaths[config.name] = me.pageRoot + '/app';
+        me.lookupPaths[config.name] = 'app';
         me.appName = config.name;
         if (me.isTouch) {
           var reqs = config.requires;
@@ -304,7 +304,7 @@ DynamicAnalyserMockingExtSystem.prototype.getDependencies = function () {
     fixMissingDomApis();
     var Ext = safelyEvalFile(senchaCoreFile);
     this.defineExtGlobals();
-    safelyEvalFile(this.appJsFilePath);
+    safelyEvalFile(this.pageRoot + '/' + this.appJsFilePath);
     this.filesLoadedSoFar.push(this.appJsFilePath);
     return this.filesLoadedSoFar;
 };
