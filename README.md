@@ -52,23 +52,23 @@ See below for the options and examples.
 
 ### Options
 
+#### options.pageRoot
+Type: `String`
+Default value: current directory
+
+If your index.html is in a different directory to where you are running grunt from then you'll need to set this to be relative to current directory.
+
 #### options.appJs
 Type: `String`
 Default value: undefined
 
-This should be the string path to your file which contains the Ext.application call which initialises your application
+This should be the string path to your file which contains the `Ext.application` call which initialises your application. This should be set relative to the `pageRoot` property.
 
 #### options.senchaDir
 Type: `String`
 Default value: undefined
 
-This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there.
-
-#### options.pageRoot
-Type: `String`
-Default value: current directory
-
-If your index.html is in a sub directory then set this to that directory.
+This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there. This should be set relative to the `pageRoot` property.
 
 #### options.mode
 Type: `String`
@@ -169,6 +169,39 @@ grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
 Included in the repository is a copy of the Ext.js Pandora application which they use to showcase their MVC walkthroughs. This can be found under ```tests/integration/pandora-ext-4.1.1a``` and should be a fully working example.
 
 NOTE: Their example does not manage it's dependencies correctly as it does not declare a few files upfront (notably Ext.container.ButtonGroup). I've left the example broken like this so I can do a "like for like" comparison of the resulting file list. However the build file for the example does copy over the whole of the ext.js lib anway to keep the example working when it is built and minified.
+
+#### When you're running grunt from a different directory to your index.html page
+
+If you have you page(s) in a different directory to where you run grunt then you need to set the `pageRoot` property. For example if your directories are structured like so:
+
+```
+app
+|-- Gruntfile.js
+|-- package.json
++-- www
+    |-- index.html
+    +-- js
+    |    |-- app.js
+    |    +-- app
+    +-- lib
+         +-- sencha-touch-2.1.0
+```
+
+Then your config for the grunt task should look like:
+
+```js
+grunt.initConfig({
+  sencha_dependencies: {
+    prod: {
+      options: {
+        pageRoot: './www', // relative to dir where grunt will be run
+        appJs: 'app.js', // relative to www
+        senchaDir: 'lib/sencha-touch-2.1.0' // relative to www
+      }
+    }
+  }
+})
+```
 
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [grunt][].
