@@ -93,7 +93,12 @@ DynamicHeadlessBrowserEmulator.prototype.reOrderFiles = function() {
   var history = Ext.Loader.history,
       files = [this.getSenchaCoreFile()];
   for (var i = 0, len = history.length; i < len; i++) {
-    files.push(Ext.Loader.getPath(history[i]));
+      var className = history[i];
+      var filePath = Ext.Loader.getPath(className)
+      files.push(filePath);
+      if (this.printDepGraph){
+        grunt.log.writeln(filePath);
+      }
   }
   files.push(this.appJsFilePath);
   return files;
@@ -111,7 +116,7 @@ DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
       this.defineExtGlobals(Ext);
       this.addPatchesToExtToRun(Ext);
       window.document.close();
-      safelyEvalFile(this.appJsFilePath);
+      safelyEvalFile(this.pageRoot + '/' + this.appJsFilePath);
       if (!this.isTouch) {
         Ext.EventManager.deferReadyEvent = null;
         Ext.EventManager.fireReadyEvent();
