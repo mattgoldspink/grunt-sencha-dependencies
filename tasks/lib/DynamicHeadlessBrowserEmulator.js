@@ -37,7 +37,7 @@ DynamicHeadlessBrowserEmulator.prototype.setSenchaDir = function(_senchaDir){
 };
 
 DynamicHeadlessBrowserEmulator.prototype.getSenchaCoreFile = function(){
-    return this.senchaDir  + "/" + (this.isTouch ? 'sencha-touch-debug.js' : 'ext-debug.js');
+    return this.pageRoot + '/' + this.senchaDir  + "/" + (this.isTouch ? 'sencha-touch-debug.js' : 'ext-debug.js');
 };
 
 DynamicHeadlessBrowserEmulator.prototype.defineExtGlobals = function (Ext) {
@@ -58,7 +58,7 @@ DynamicHeadlessBrowserEmulator.prototype.defineExtGlobals = function (Ext) {
   if (this.isTouch) {
       Ext.browser.engineVersion =  new Ext.Version('1.0');
   }
-  Ext.Loader.setPath('Ext', removeTrailingSlash(this.senchaDir) + '/src');
+  Ext.Loader.setPath('Ext', removeTrailingSlash(this.pageRoot +'/' + this.senchaDir) + '/src');
   return global.Ext;
 };
 
@@ -94,13 +94,13 @@ DynamicHeadlessBrowserEmulator.prototype.reOrderFiles = function() {
       files = [this.getSenchaCoreFile()];
   for (var i = 0, len = history.length; i < len; i++) {
       var className = history[i];
-      var filePath = Ext.Loader.getPath(className)
-      files.push(filePath);
+      var filePath = Ext.Loader.getPath(className);
+      files.push(this.pageRoot + '/' + filePath);
       if (this.printDepGraph){
-        grunt.log.writeln(filePath);
+        grunt.log.writeln(this.pageRoot + '/' + filePath);
       }
   }
-  files.push(this.appJsFilePath);
+  files.push(this.pageRoot + '/' + this.appJsFilePath);
   return files;
 };
 

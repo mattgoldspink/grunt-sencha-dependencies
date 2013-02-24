@@ -305,7 +305,7 @@ DynamicAnalyserMockingExtSystem.prototype.getDependencies = function () {
     var Ext = safelyEvalFile(senchaCoreFile);
     this.defineExtGlobals();
     safelyEvalFile(this.pageRoot + '/' + this.appJsFilePath);
-    this.filesLoadedSoFar.push(this.appJsFilePath);
+    this.filesLoadedSoFar.push(this.pageRoot + '/' + this.appJsFilePath);
     return this.filesLoadedSoFar;
 };
 

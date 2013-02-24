@@ -164,7 +164,7 @@ grunt.loadNpmTasks('grunt-sencha-dependencies');
 grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
 ```
 
-## Larger example
+### Larger example
 
 Included in the repository is a copy of the Ext.js Pandora application which they use to showcase their MVC walkthroughs. This can be found under ```tests/integration/pandora-ext-4.1.1a``` and should be a fully working example.
 
