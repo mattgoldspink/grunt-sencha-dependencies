@@ -1,16 +1,16 @@
 /**
  * This version tries to run the Ext and app.js files in a headless browser, but it completely
- * overrides the Ext.define system to run it's own loading analysis.
+ * overrides the Ext.define system to run it"s own loading analysis.
  *
- * This means we can usually avoid having to mock too much of the DOM api's, but at the cost of reproducing
- * Sencha and Ext.js's class loading mechanism - i.e. we need to know what keywords they analyse in the
+ * This means we can usually avoid having to mock too much of the DOM api"s, but at the cost of reproducing
+ * Sencha and Ext.js"s class loading mechanism - i.e. we need to know what keywords they analyse in the
  * class file config and then ensure we resolve those dependencies in the correct order.
  */
-var grunt = require('grunt'),
-    domino = require('domino'),
-    safelyEvalFile = require('./safelyEvalFile.js'),
-    defineGlobals = require('./defineGlobals.js'),
-    fixMissingDomApis = require('./fixMissingDomApis.js');
+var grunt = require("grunt"),
+    domino = require("domino"),
+    safelyEvalFile = require("./safelyEvalFile.js"),
+    defineGlobals = require("./defineGlobals.js"),
+    fixMissingDomApis = require("./fixMissingDomApis.js");
 
 function DynamicAnalyserMockingExtSystem(appJsFilePath, senchaDir, pageRoot, isTouch, printDepGraph) {
     this.appJsFilePath = appJsFilePath;
@@ -18,7 +18,7 @@ function DynamicAnalyserMockingExtSystem(appJsFilePath, senchaDir, pageRoot, isT
     this.filesLoadedSoFar = [];
     this.usesList = [];
     this.beingLoaded = [];
-    this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : '.';
+    this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : ".";
     this.classesSeenSoFar = {
         asArray: []
     };
@@ -31,7 +31,7 @@ function DynamicAnalyserMockingExtSystem(appJsFilePath, senchaDir, pageRoot, isT
 }
 
 function removeTrailingSlash(path) {
-    return path[path.length - 1] === '/' ? path.substring(0, path.length - 1) : path;
+    return path[path.length - 1] === "/" ? path.substring(0, path.length - 1) : path;
 }
 
 DynamicAnalyserMockingExtSystem.prototype.addLookupPath = function (key, value) {
@@ -40,35 +40,35 @@ DynamicAnalyserMockingExtSystem.prototype.addLookupPath = function (key, value) 
 
 DynamicAnalyserMockingExtSystem.prototype.setSenchaDir = function (_senchaDir) {
     this.senchaDir = _senchaDir;
-    this.addLookupPath('Ext', removeTrailingSlash(_senchaDir) + '/src');
+    this.addLookupPath("Ext", removeTrailingSlash(_senchaDir) + "/src");
 };
 
 DynamicAnalyserMockingExtSystem.prototype.mapClassToFile = function (className, dontTestExistance) {
-    var parts = className.split('.'),
+    var parts = className.split("."),
         filepath,
         currentIndex = parts.length + 1,
         currentPackage;
-    // let's special case for Ext core stuff
-    if (parts[0] === 'Ext' && parts.length === 1) {
-        filepath = this.isTouch ? '/sencha-touch-debug.js' : '/ext-debug.js';
-        filepath = this.pageRoot + '/' + this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
+    // let"s special case for Ext core stuff
+    if (parts[0] === "Ext" && parts.length === 1) {
+        filepath = this.isTouch ? "/sencha-touch-debug.js" : "/ext-debug.js";
+        filepath = this.pageRoot + "/" + this.lookupPaths[parts[0]].substring(0, this.lookupPaths[parts[0]].length - 4) + filepath;
     } else {
         // loop through from the longest package name to find it
         while (currentIndex-- >= 0) {
-            currentPackage = parts.slice(0, currentIndex).join('.');
+            currentPackage = parts.slice(0, currentIndex).join(".");
             if (this.lookupPaths[currentPackage]) {
-                filepath = this.pageRoot + '/' + this.lookupPaths[currentPackage] + (currentIndex === parts.length ?
-                          '' : '/' + parts.slice(currentIndex, parts.length).join('/') + '.js');
+                filepath = this.pageRoot + "/" + this.lookupPaths[currentPackage] + (currentIndex === parts.length ?
+                          "" : "/" + parts.slice(currentIndex, parts.length).join("/") + ".js");
                 break;
             }
         }
     }
     if (filepath === undefined) {
-        filepath = this.pageRoot + '/' + parts.join('/') + '.js';
+        filepath = this.pageRoot + "/" + parts.join("/") + ".js";
     }
     if (!grunt.file.exists(filepath) && !dontTestExistance) {
-        grunt.log.warn('Source file "' + filepath + '" not found.');
-        return '';
+        grunt.log.warn("Source file '" + filepath + "' not found.");
+        return "";
     }
     return filepath;
 };
@@ -78,7 +78,7 @@ var currentDepth = [" "];
 DynamicAnalyserMockingExtSystem.prototype.loadClassFileAndEval = function (className, onDone) {
     if (className && !this.doesClassExistInGlobalSpace(className)) {
         var loadPath = this.mapClassToFile(className);
-        if (loadPath !== '' &&
+        if (loadPath !== "" &&
             !grunt.util._.contains(this.filesLoadedSoFar, loadPath) &&
             !grunt.util._.contains(this.beingLoaded, loadPath)) {
             currentDepth.push(" ");
@@ -89,7 +89,7 @@ DynamicAnalyserMockingExtSystem.prototype.loadClassFileAndEval = function (class
             try {
                 eval(grunt.file.read(loadPath));
             } catch (e) {
-                grunt.log.warn('An error occured whilst loading class ' + className + ' - ' + e);
+                grunt.log.warn("An error occured whilst loading class " + className + " - " + e);
             }
             this.filesLoadedSoFar.push(loadPath);
             currentDepth.pop();
@@ -101,7 +101,7 @@ DynamicAnalyserMockingExtSystem.prototype.loadClassFileAndEval = function (class
 };
 
 DynamicAnalyserMockingExtSystem.prototype.doesClassExistInGlobalSpace = function (className) {
-    var parts = className.split('.'),
+    var parts = className.split("."),
         previousPart = global;
     for (var i = 0, len = parts.length; i < len; i++) {
         var part = parts[i];
@@ -114,7 +114,7 @@ DynamicAnalyserMockingExtSystem.prototype.doesClassExistInGlobalSpace = function
 };
 
 DynamicAnalyserMockingExtSystem.prototype.defineClassNameSpace = function (className, aliasClassDef) {
-    var parts = className.split('.'),
+    var parts = className.split("."),
         previousPart = global;
     if (!this.classesSeenSoFar[className]) {
     }
@@ -167,12 +167,12 @@ DynamicAnalyserMockingExtSystem.prototype.processClassConf = function (name, cla
             }
         }
     }
-    this.loadAllFilesForProperty('controller', classConf);
-    this.loadAllFilesForProperty('store', classConf);
-    this.loadAllFilesForProperty('model', classConf);
-    this.loadAllFilesForProperty('view', classConf);
+    this.loadAllFilesForProperty("controller", classConf);
+    this.loadAllFilesForProperty("store", classConf);
+    this.loadAllFilesForProperty("model", classConf);
+    this.loadAllFilesForProperty("view", classConf);
     if (classConf.autoCreateViewport === true) {
-        var cName = classConf.name + '.view.Viewport';
+        var cName = classConf.name + ".view.Viewport";
         this.loadClassFileAndEval(cName);
     }
     if (classConf.mixins) {
@@ -198,7 +198,7 @@ DynamicAnalyserMockingExtSystem.prototype.handleSenchaTouchClassDef = function (
         value = classConf[prop];
         if (Ext.isSimpleObject(value)) {
             this.handleSenchaTouchClassDef(value);
-        } else if (prop === 'xclass') {
+        } else if (prop === "xclass") {
             this.loadClassFileAndEval(value);
             classConf[prop] = Ext.create(value);
         }
@@ -215,15 +215,15 @@ DynamicAnalyserMockingExtSystem.prototype.loadAllClassesThatMatch = function (cl
 };
 
 DynamicAnalyserMockingExtSystem.prototype.loadAllFilesForProperty = function (propertyname, classConf) {
-    var plurallizedName = propertyname + 's', i, len, cName;
+    var plurallizedName = propertyname + "s", i, len, cName;
     if (classConf[plurallizedName]) {
         if (typeof classConf[plurallizedName] === "string") {
             classConf[plurallizedName]  = [classConf[plurallizedName]];
         }
         for (i = 0, len = classConf[plurallizedName].length; i < len; i++) {
-            cName = classConf[plurallizedName][i].split('.').length > 1 ?
+            cName = classConf[plurallizedName][i].split(".").length > 1 ?
                         classConf[plurallizedName][i] :
-                        this.appName + '.' + propertyname + '.' + classConf[plurallizedName][i];
+                        this.appName + "." + propertyname + "." + classConf[plurallizedName][i];
             this.loadClassFileAndEval(cName);
         }
     }
@@ -261,7 +261,7 @@ DynamicAnalyserMockingExtSystem.prototype.defineExtGlobals = function () {
             }
         },
         application: function (config) {
-            me.lookupPaths[config.name] = 'app';
+            me.lookupPaths[config.name] = "app";
             me.appName = config.name;
             if (me.isTouch) {
                 var reqs = config.requires;
@@ -275,7 +275,7 @@ DynamicAnalyserMockingExtSystem.prototype.defineExtGlobals = function () {
                 config.requires = reqs;
             }
             me.processClassConf(config.name, config);
-            me.loadClassFileAndEval('Ext.app.Application');
+            me.loadClassFileAndEval("Ext.app.Application");
             while (me.usesList.length > 0) {
                 me.loadClassFileAndEval(me.usesList.pop());
             }
@@ -294,18 +294,18 @@ DynamicAnalyserMockingExtSystem.prototype.defineExtGlobals = function () {
 
 DynamicAnalyserMockingExtSystem.prototype.getDependencies = function () {
     var senchaCoreFile, contents, src;
-    senchaCoreFile = this.mapClassToFile('Ext');
+    senchaCoreFile = this.mapClassToFile("Ext");
     this.filesLoadedSoFar.push(senchaCoreFile);
     contents = grunt.file.read(senchaCoreFile);
-    // use domino to mock out our DOM api's
-    global.window = domino.createWindow('<head><script src="' + senchaCoreFile + '"></script></head><body></body>');
+    // use domino to mock out our DOM api"s
+    global.window = domino.createWindow("<head><script src='" + senchaCoreFile + "'></script></head><body></body>");
     global.document = window.document;
     defineGlobals(this.pageRoot);
     fixMissingDomApis();
     var Ext = safelyEvalFile(senchaCoreFile);
     this.defineExtGlobals();
-    safelyEvalFile(this.pageRoot + '/' + this.appJsFilePath);
-    this.filesLoadedSoFar.push(this.pageRoot + '/' + this.appJsFilePath);
+    safelyEvalFile(this.pageRoot + "/" + this.appJsFilePath);
+    this.filesLoadedSoFar.push(this.pageRoot + "/" + this.appJsFilePath);
     return this.filesLoadedSoFar;
 };
 

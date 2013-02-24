@@ -1,8 +1,8 @@
-var select = require('../../node_modules/domino/lib/select.js'),
-    DocumentFragment = require('../../node_modules/domino/lib/DocumentFragment.js'),
-    Node = require('../../node_modules/domino/lib/Node.js'),
-    Element = require('../../node_modules/domino/lib/Element.js'),
-    NodeList = require('../../node_modules/domino/lib/NodeList.js');
+var select = require("../../node_modules/domino/lib/select.js"),
+    DocumentFragment = require("../../node_modules/domino/lib/DocumentFragment.js"),
+    Node = require("../../node_modules/domino/lib/Node.js"),
+    Element = require("../../node_modules/domino/lib/Element.js"),
+    NodeList = require("../../node_modules/domino/lib/NodeList.js");
 
 
 var fixMissingDomApis = function () {

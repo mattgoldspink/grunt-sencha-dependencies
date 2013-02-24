@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var DynamicAnalyserMockingExtSystem;
 /*
@@ -23,7 +23,7 @@ var DynamicAnalyserMockingExtSystem;
 
 exports.sencha_dependencies = {
     setUp: function (done) {
-        DynamicAnalyserMockingExtSystem = require('../tasks/lib/DynamicAnalyserMockingExtSystem.js');
+        DynamicAnalyserMockingExtSystem = require("../tasks/lib/DynamicAnalyserMockingExtSystem.js");
         // setup here if necessary
         done();
     },

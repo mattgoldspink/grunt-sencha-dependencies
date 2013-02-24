@@ -2,24 +2,24 @@
  * This version tries to run the app.js and Ext.js in a mock headless browser using domino.
  *
  * This means any dynamic code will be executed and the class system resolution is done using 100% of
- * Ext.js's code - all we do is define some of missing globals that Ext & Sencha need to run with.
- * In addition we also fix up some missing functionality in domino's DOM api's
+ * Ext.js"s code - all we do is define some of missing globals that Ext & Sencha need to run with.
+ * In addition we also fix up some missing functionality in domino"s DOM api"s
  * Some of these fixes should be contributed back (especially the ones around selectors over DocumentFragments).
  *
  * In general this mode is best when it works because it will run exactly the same as the application
- * and won't be as susceptible to changes in the Ext.Loader and Class mechanism's in future releases.
- * However it can break because of the incomplete DOM api's
+ * and won"t be as susceptible to changes in the Ext.Loader and Class mechanism"s in future releases.
+ * However it can break because of the incomplete DOM api"s
  */
 
-var grunt = require('grunt'),
-    domino = require('domino'),
-    defineGlobals = require('./defineGlobals.js'),
-    safelyEvalFile = require('./safelyEvalFile.js'),
-    fixMissingDomApis = require('./fixMissingDomApis.js');
+var grunt = require("grunt"),
+    domino = require("domino"),
+    defineGlobals = require("./defineGlobals.js"),
+    safelyEvalFile = require("./safelyEvalFile.js"),
+    fixMissingDomApis = require("./fixMissingDomApis.js");
 
 function DynamicHeadlessBrowserEmulator(appJsFilePath, senchaDir, pageRoot, isTouch, printDepGraph) {
     this.appJsFilePath = appJsFilePath;
-    this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : '.';
+    this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : ".";
     this.printDepGraph = !!printDepGraph;
     this.isTouch = !!isTouch;
     this.appName = null;
@@ -29,7 +29,7 @@ function DynamicHeadlessBrowserEmulator(appJsFilePath, senchaDir, pageRoot, isTo
 }
 
 function removeTrailingSlash(path) {
-    return path[path.length - 1] === '/' ? path.substring(0, path.length - 1) : path;
+    return path[path.length - 1] === "/" ? path.substring(0, path.length - 1) : path;
 }
 
 DynamicHeadlessBrowserEmulator.prototype.setSenchaDir = function (_senchaDir) {
@@ -37,7 +37,7 @@ DynamicHeadlessBrowserEmulator.prototype.setSenchaDir = function (_senchaDir) {
 };
 
 DynamicHeadlessBrowserEmulator.prototype.getSenchaCoreFile = function () {
-    return this.pageRoot + '/' + this.senchaDir  + "/" + (this.isTouch ? 'sencha-touch-debug.js' : 'ext-debug.js');
+    return this.pageRoot + "/" + this.senchaDir  + "/" + (this.isTouch ? "sencha-touch-debug.js" : "ext-debug.js");
 };
 
 DynamicHeadlessBrowserEmulator.prototype.defineExtGlobals = function (Ext) {
@@ -56,9 +56,9 @@ DynamicHeadlessBrowserEmulator.prototype.defineExtGlobals = function (Ext) {
         Ext._application.apply(Ext, arguments);
     };
     if (this.isTouch) {
-        Ext.browser.engineVersion =  new Ext.Version('1.0');
+        Ext.browser.engineVersion =  new Ext.Version("1.0");
     }
-    Ext.Loader.setPath('Ext', removeTrailingSlash(this.pageRoot + '/' + this.senchaDir) + '/src');
+    Ext.Loader.setPath("Ext", removeTrailingSlash(this.pageRoot + "/" + this.senchaDir) + "/src");
     return global.Ext;
 };
 
@@ -70,14 +70,14 @@ DynamicHeadlessBrowserEmulator.prototype.addPatchesToExtToRun = function (Ext) {
         var _getStyle = Ext.Element.prototype.getStyle;
         Ext.Element.prototype.getStyle = function (prop) {
             var result = _getStyle.apply(this, arguments);
-            if (prop === 'background-position' && result === undefined) {
-                return '0 0';
+            if (prop === "background-position" && result === undefined) {
+                return "0 0";
             }
             return result;
         };
-        // fix getViewportHeight not having reference to 'self' - ext-debug.js
+        // fix getViewportHeight not having reference to "self" - ext-debug.js
         global.self = global.document;
-        // prevent Layout's being run
+        // prevent Layout"s being run
         if (Ext.layout && Ext.layout.Context) {
             Ext.layout.Context.prototype.invalidate = Ext.emptyFn;
         }
@@ -95,20 +95,20 @@ DynamicHeadlessBrowserEmulator.prototype.reOrderFiles = function () {
     for (var i = 0, len = history.length; i < len; i++) {
         var className = history[i];
         var filePath = Ext.Loader.getPath(className);
-        files.push(this.pageRoot + '/' + filePath);
+        files.push(this.pageRoot + "/" + filePath);
         if (this.printDepGraph) {
-            grunt.log.writeln(this.pageRoot + '/' + filePath);
+            grunt.log.writeln(this.pageRoot + "/" + filePath);
         }
     }
-    files.push(this.pageRoot + '/' + this.appJsFilePath);
+    files.push(this.pageRoot + "/" + this.appJsFilePath);
     return files;
 };
 
 DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
     try {
         var senchaCoreFile = this.getSenchaCoreFile();
-        // use domino to mock out our DOM api's
-        global.window = domino.createWindow('<html><head><script src="' + senchaCoreFile + '"></script></head><body></body></html>');
+        // use domino to mock out our DOM api"s
+        global.window = domino.createWindow("<html><head><script src='" + senchaCoreFile + "'></script></head><body></body></html>");
         global.document = window.document;
         defineGlobals(this.pageRoot);
         fixMissingDomApis();
@@ -116,7 +116,7 @@ DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
         this.defineExtGlobals(Ext);
         this.addPatchesToExtToRun(Ext);
         window.document.close();
-        safelyEvalFile(this.pageRoot + '/' + this.appJsFilePath);
+        safelyEvalFile(this.pageRoot + "/" + this.appJsFilePath);
         if (!this.isTouch) {
             Ext.EventManager.deferReadyEvent = null;
             Ext.EventManager.fireReadyEvent();

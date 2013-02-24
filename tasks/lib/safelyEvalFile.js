@@ -1,8 +1,8 @@
-var grunt = require('grunt');
+var grunt = require("grunt");
 
 safelyEvalFile = function (fileUrl) {
     if (!grunt.file.exists(fileUrl)) {
-        grunt.log.error('Source file "' + fileUrl + '" not found.');
+        grunt.log.error("Source file '" + fileUrl + "' not found.");
     }
     try {
         eval(grunt.file.read(fileUrl));

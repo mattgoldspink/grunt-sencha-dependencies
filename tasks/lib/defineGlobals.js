@@ -1,8 +1,8 @@
-var grunt = require('grunt');
+var grunt = require("grunt");
 
 module.exports = function (pageRoot) {
     global.emptyFn = function () { return {}; };
-    global.navigator = { 'userAgent' : 'node' };
+    global.navigator = { "userAgent" : "node" };
     global.location = window.location;
     global.ActiveXObject = global.emptyFn;
     global.window.localStorage = {
@@ -26,14 +26,14 @@ module.exports = function (pageRoot) {
         }
     };
     global.XMLHttpRequest = function () {
-        var contents = '';
+        var contents = "";
         return {
             send: global.emptyFn,
             open: function (type, url) {
-                url = url.replace(/\?.*/, '');
-                url = pageRoot  + '/' + url;
+                url = url.replace(/\?.*/, "");
+                url = pageRoot  + "/" + url;
                 if (!grunt.file.exists(url)) {
-                    grunt.log.error('WARNING: Source file "' + url + '" not found.');
+                    grunt.log.error("WARNING: Source file '" + url + "' not found.");
                     this.status = 404;
                 } else {
                     this.responseText = grunt.file.read(url);
