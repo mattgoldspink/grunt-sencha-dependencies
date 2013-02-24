@@ -1,6 +1,7 @@
+/*global module, require, Ext*/
 var grunt = require("grunt");
 
-safelyEvalFile = function (fileUrl) {
+var safelyEvalFile = function (fileUrl) {
     if (!grunt.file.exists(fileUrl)) {
         grunt.log.error("Source file '" + fileUrl + "' not found.");
     }

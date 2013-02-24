@@ -1,3 +1,4 @@
+/*global Ext, window*/
 /**
  * This version tries to run the Ext and app.js files in a headless browser, but it completely
  * overrides the Ext.define system to run it"s own loading analysis.

@@ -42,7 +42,8 @@ var fixMissingDomApis = function () {
         return null;
     };
     DocumentFragment.prototype.nextElement = function (tagName) {
-        var next = this.firstElementChild() || this.nextElementSibling();
+        var root,
+            next = this.firstElementChild() || this.nextElementSibling();
         if (next) return next;
 
         if (!root) root = this.ownerDocument.documentElement;

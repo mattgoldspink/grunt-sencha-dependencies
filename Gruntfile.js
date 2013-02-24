@@ -23,7 +23,8 @@ module.exports = function (grunt) {
                 evil: true,
                 strict: false,
                 indent: 4,
-                quotmark: "double"
+                quotmark: "double",
+                undef: true
             }
         },
 

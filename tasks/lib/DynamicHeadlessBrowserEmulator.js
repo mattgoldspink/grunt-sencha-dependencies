@@ -1,3 +1,4 @@
+/*global Ext, module, require, window*/
 /**
  * This version tries to run the app.js and Ext.js in a mock headless browser using domino.
  *

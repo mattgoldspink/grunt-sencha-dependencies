@@ -1,3 +1,4 @@
+/*global window, require, module*/
 var grunt = require("grunt");
 
 module.exports = function (pageRoot) {
