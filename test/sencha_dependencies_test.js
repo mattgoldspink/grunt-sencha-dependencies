@@ -19,25 +19,17 @@ var DynamicAnalyserMockingExtSystem;
     test.throws(block, [error], [message])
     test.doesNotThrow(block, [error], [message])
     test.ifError(value)
-*/
+    */
 
 exports.sencha_dependencies = {
-  setUp: function(done) {
-    DynamicAnalyserMockingExtSystem = require('../tasks/lib/DynamicAnalyserMockingExtSystem.js');
-    // setup here if necessary
-    done();
-  },
-  can_load_DynamicAnalyserMockingExtSystem: function(test) {
-    test.expect(1);
-    test.ok(DynamicAnalyserMockingExtSystem, "loaded DynamicAnalyserMockingExtSystem");
-    test.done();
-  }/* ,
-  global_navigator_created: function(test) {
-    test.expect(2);
-    new DynamicAnalyserMockingExtSystem().defineGlobals();
-    test.ok(global.navigator, "navigator created");
-    test.equal(global.navigator.userAgent, "node", "navigator.userAgent created");
-    test.done();
-  }*/
-
+    setUp: function (done) {
+        DynamicAnalyserMockingExtSystem = require('../tasks/lib/DynamicAnalyserMockingExtSystem.js');
+        // setup here if necessary
+        done();
+    },
+    can_load_DynamicAnalyserMockingExtSystem: function (test) {
+        test.expect(1);
+        test.ok(DynamicAnalyserMockingExtSystem, "loaded DynamicAnalyserMockingExtSystem");
+        test.done();
+    }
 };
