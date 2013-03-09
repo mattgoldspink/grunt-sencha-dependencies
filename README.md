@@ -2,16 +2,6 @@
 
 > A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc
 
-## IMPORTANT - This needs Grunt 0.4.0rc7
-
-This plugin was built using the latest grunt because I needed a robust and simple Jasmine task. I'd highly recommend upgrading to Grunt 0.4.0rc7 or later if you've not done so. The instructions to do so can be found on the Grunt wiki: https://github.com/gruntjs/grunt/wiki/Getting-started
-
-In addition, don't get caught out when installing the grunt-contrib-* tasks. These also need
-to the be the latest compatible ones that work with 0.4.0rc7. For example I've been using the following:
-
-- npm install grunt-contrib-concat@0.1.2rc6 --save-dev
-- npm install grunt-contrib-uglify@0.1.1rc6 --save-dev
-
 ## Getting Started
 
 ```bash
@@ -72,10 +62,11 @@ This is the location of the Sencha install. It should be the unzipped install as
 
 #### options.mode
 Type: `String`
-Default value: dynHeadless
+Default value: phantom
 
-One of `dynHeadless` or `dynMock` - This tells the task which strategy to use to figure out the dependencies.
+One of `phantom`, `dynHeadless` or `dynMock` - This tells the task which strategy to use to figure out the dependencies.
 
+- `phantom` - will look for an index.html in the `pageRoot` directory and run that page headlessly in phantomJs. When the page has finished loading it will then look at what files Ext downloaded for the classes. NOTE if other files were downloaded into the page they will not be tracked, only those done through the Ext.Loader are captured.
 - `dynHeadless` - will try to run the whole app in a headless browser and intercept the Ext.application.launch call. This is usually the most accurate, but it's also possible that it may break if your code does too much dynamic or depends on some certain browser api's which aren't available. If you find your app doesn't compile correctly in this mode then try `dynMock`
 - `dynMock` - will try to run the app.js file but it intercepts all the calls to Ext.js/Sencha Touch class creation and loading api's. This means we don't try to run too many pieces of unnecessary code which could cause breaks.
 
@@ -208,5 +199,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 
 ## Release History
 
+- 0.5.0 - Switched the default mode to use PhantomJs to capture the loaded classes
+- 0.4.0 - Added pageRoot support for when your index.html is not in the root directory
 - 0.2.5 - Initial Touch support - tested against the Sencha Stock App - likely still bugs with other apps though
 - 0.2.4 - Fixed bugs which prevented it working on the Ext.js Pandora example MVC application and added some new properties to help with debugging

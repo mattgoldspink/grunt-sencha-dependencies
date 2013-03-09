@@ -12,18 +12,19 @@
  * However it can break because of the incomplete DOM api"s
  */
 
-var grunt = require("grunt"),
-    domino = require("domino"),
-    defineGlobals = require("./defineGlobals.js"),
-    safelyEvalFile = require("./safelyEvalFile.js"),
+var grunt             = require("grunt"),
+    domino            = require("domino"),
+    reorderFiles      = require("reorderFiles"),
+    defineGlobals     = require("./defineGlobals.js"),
+    safelyEvalFile    = require("./safelyEvalFile.js"),
     fixMissingDomApis = require("./fixMissingDomApis.js");
 
 function DynamicHeadlessBrowserEmulator(appJsFilePath, senchaDir, pageRoot, isTouch, printDepGraph) {
     this.appJsFilePath = appJsFilePath;
-    this.pageRoot = pageRoot ? removeTrailingSlash(pageRoot) : ".";
+    this.pageRoot      = pageRoot ? removeTrailingSlash(pageRoot) : ".";
     this.printDepGraph = !!printDepGraph;
-    this.isTouch = !!isTouch;
-    this.appName = null;
+    this.isTouch       = !!isTouch;
+    this.appName       = null;
     if (senchaDir) {
         this.setSenchaDir(senchaDir);
     }
@@ -90,21 +91,6 @@ DynamicHeadlessBrowserEmulator.prototype.addPatchesToExtToRun = function (Ext) {
     }
 };
 
-DynamicHeadlessBrowserEmulator.prototype.reOrderFiles = function () {
-    var history = Ext.Loader.history,
-        files = [this.getSenchaCoreFile()];
-    for (var i = 0, len = history.length; i < len; i++) {
-        var className = history[i];
-        var filePath = Ext.Loader.getPath(className);
-        files.push(this.pageRoot + "/" + filePath);
-        if (this.printDepGraph) {
-            grunt.log.writeln(this.pageRoot + "/" + filePath);
-        }
-    }
-    files.push(this.pageRoot + "/" + this.appJsFilePath);
-    return files;
-};
-
 DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
     try {
         var senchaCoreFile = this.getSenchaCoreFile();
@@ -122,8 +108,14 @@ DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
             Ext.EventManager.deferReadyEvent = null;
             Ext.EventManager.fireReadyEvent();
         }
-        var files = this.reOrderFiles();
-        return files;
+        return reorderFiles(
+            files,
+            this.getSenchaCoreFile(),
+            this.pageRoot,
+            this.appJsFilePath,
+            this.printDepGraph,
+            Ext.Loader.getPath
+        );
     } catch (e) {
         grunt.log.error("An error occured which could cause problems " + e);
         if (e.stack) {

@@ -8,11 +8,17 @@ module.exports = function(grunt) {
 
         sencha_dependencies: {
           app: {
+            options: {
+                pageRoot: "."
+            }
+          },
+          app2: {
             options : {
               appFile: 'app.js',
               senchaDir: '../libs/touch-2.1.1',
               isTouch: true,
-              printDepGraph: true
+              printDepGraph: true,
+              mode: 'dynHeadless'
             }
           },
           dynMockMode: {
@@ -29,8 +35,9 @@ module.exports = function(grunt) {
         uglify: {
             app: {
               options: {
-                sourceMap: 'dest/source-map.js',
-                compress: false
+                sourceMap: 'dest/source-map.map',
+                sourceMappingURL: './source-map.map',
+                sourceMapRoot: '..'
               },
               files: {
                 'dest/app.min.js': ['<%= sencha_dependencies_app %>']
@@ -41,9 +48,8 @@ module.exports = function(grunt) {
         copy: {
           app: {
             files: [
-              //{expand: true, src: ['src/**'], dest: 'dest/', cwd: '../libs/touch-2.1.1/'},
               {src: ['resources/**'], dest: 'dest/'},
-              {src: ['index.html'], dest: 'dest/'}
+              {src: ['index.html'], dest: 'dest/'},
             ],
             options: {
               processContent: function(content, filePath) {

@@ -1,6 +1,7 @@
 Ext.Loader.setPath({
     'Ext': '../libs/touch-2.1.1/src'
 });
+
 Ext.application({
     name: 'StockApp',
 
