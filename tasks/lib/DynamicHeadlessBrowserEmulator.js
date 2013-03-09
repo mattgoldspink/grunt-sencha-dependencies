@@ -14,7 +14,7 @@
 
 var grunt             = require("grunt"),
     domino            = require("domino"),
-    reorderFiles      = require("reorderFiles"),
+    reorderFiles      = require("./reorderFiles.js"),
     defineGlobals     = require("./defineGlobals.js"),
     safelyEvalFile    = require("./safelyEvalFile.js"),
     fixMissingDomApis = require("./fixMissingDomApis.js");
@@ -109,7 +109,7 @@ DynamicHeadlessBrowserEmulator.prototype.getDependencies = function () {
             Ext.EventManager.fireReadyEvent();
         }
         return reorderFiles(
-            files,
+            Ext.Loader.history,
             this.getSenchaCoreFile(),
             this.pageRoot,
             this.appJsFilePath,

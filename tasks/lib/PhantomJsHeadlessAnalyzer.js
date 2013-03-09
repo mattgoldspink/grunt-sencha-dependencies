@@ -11,7 +11,7 @@
  */
 var grunt        = require("grunt"),
     phantomjs    = require("grunt-lib-phantomjs").init(grunt),
-    reorderFiles = require("reorderFiles"),
+    reorderFiles = require("./reorderFiles.js"),
     // Nodejs libs.
     path         = require("path"),
     // Get an asset file, local to the root of the project.
@@ -124,10 +124,10 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         done: function (err) {
             doneFn(reorderFiles(
                 files,
-                this.getSenchaCoreFile(),
-                this.pageRoot,
-                this.appJsFilePath,
-                this.printDepGraph
+                me.getSenchaCoreFile(),
+                me.pageRoot,
+                me.appJsFilePath,
+                me.printDepGraph
             ));
             //grunt.file["delete"](this.pageRoot + "/test.html");
         }

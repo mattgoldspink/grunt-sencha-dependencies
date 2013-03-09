@@ -26,7 +26,7 @@ exports.sencha_dependencies = {
     setUp: function (done) {
         DynamicHeadlessBrowserEmulator = require("../tasks/lib/DynamicHeadlessBrowserEmulator.js");
         done();
-    },/*,
+    }/*,
   "Pandora-ext-4.1.1a": function(test) {
     test.expect(1);
     debugger
@@ -50,7 +50,7 @@ exports.sencha_dependencies = {
     var found = depChecker.getDependencies();
     test.equal(found.length, 278, "Expected 278 files to be found");
     test.done();
-  },*/
+  },
     "touchtweets-2.1.1": function (test) {
         test.expect(1);
         var depChecker = new DynamicHeadlessBrowserEmulator(
@@ -62,5 +62,5 @@ exports.sencha_dependencies = {
         var found = depChecker.getDependencies();
         test.equal(found.length, 224, "Expected 224 files to be found");
         test.done();
-    }
+    }*/
 };
