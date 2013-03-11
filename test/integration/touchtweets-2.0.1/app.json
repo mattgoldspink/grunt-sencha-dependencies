@@ -2,7 +2,7 @@
     "name": "Twitter",
     "js": [
         {
-            "path": "../../sencha-touch-debug.js"
+            "path": "../libs/touch-2.1.1/sencha-touch-debug.js"
         },
         {
             "path": "app.js",

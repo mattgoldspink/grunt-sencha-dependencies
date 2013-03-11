@@ -40,7 +40,38 @@ grunt.initConfig({
 
 See below for the options and examples.
 
+### Quick start - if you previously used Sencha Cmd
+
+If you used Sencha Cmd and have an app.json file in your project then all you'll need to configure is the ```src``` property to point to your directory with this in. For example if you're running grunt in the same directory as your app.json it would be:
+
+```js
+grunt.initConfig({
+  sencha_dependencies: {
+    prod:  "."
+  }
+})
+```
+If it's in a different directory then change it to point to that. To pass the found files into another task you can do:
+
+```js
+grunt.initConfig({
+  sencha_dependencies: {
+    prod:  "."
+  },
+  concat: {
+    prod: {
+      src: '<%= sencha_dependencies_prod %>',
+      dest: 'build/app.js',
+    }
+  }
+})
+```
+
+You shouldn't need any of the below options.
+
 ### Options
+
+These options are for people who don't start with an app.json file generated from Sencha Cmd.
 
 #### options.pageRoot
 Type: `String`
@@ -84,7 +115,7 @@ If you think things aren't being resolved correctly you can set this to true as 
 
 NOTE: this only works in `dynMock` mode at the moment.
 
-### Usage Examples
+### Usage Examples for non Sencha Cmd generated apps
 
 #### Basic example
 In this example the Ext.application is defined in a file called `app.js` in the `js` folder and the Sencha Ext.js 4.1.2 lib is installed in the directory `js/vendor/extjs-4.1.2`.

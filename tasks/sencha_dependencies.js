@@ -8,51 +8,96 @@
 
 "use strict";
 
+var fs                              = require("fs"),
+    DynamicHeadlessBrowserEmulator  = require("./lib/DynamicHeadlessBrowserEmulator.js"),
+    PhantomJsHeadlessAnalyzer       = require("./lib/PhantomJsHeadlessAnalyzer.js"),
+    DynamicAnalyserMockingExtSystem = require("./lib/DynamicAnalyserMockingExtSystem.js"),
+    modes = {
+        "dynHeadless" :  DynamicHeadlessBrowserEmulator,
+        "phantom" :  PhantomJsHeadlessAnalyzer,
+        "dynMock" : DynamicAnalyserMockingExtSystem
+    };
+
 module.exports = function (grunt) {
 
-    var DynamicHeadlessBrowserEmulator = require("./lib/DynamicHeadlessBrowserEmulator.js"),
-        DynamicAnalyserMockingExtSystem = require("./lib/DynamicAnalyserMockingExtSystem.js"),
-        PhantomJsHeadlessAnalyzer = require("./lib/PhantomJsHeadlessAnalyzer.js"),
-        modes = {
-            "dynHeadless" :  DynamicHeadlessBrowserEmulator,
-            "phantom" :  PhantomJsHeadlessAnalyzer,
-            "dynMock" : DynamicAnalyserMockingExtSystem
-        };
+    function doneFn(filesLoadedSoFar, target) {
+        grunt.log.ok("Success! " + filesLoadedSoFar.length + " files added to property " + "sencha_dependencies_" + target);
+        grunt.verbose.writeln("Files are:\n    " + filesLoadedSoFar.join("\n    "));
+        grunt.config.set("sencha_dependencies_" + target, filesLoadedSoFar);
+    }
 
-    // Please see the grunt documentation for more information regarding task
-    // creation: https://github.com/gruntjs/grunt/blob/devel/docs/toc.md
+    function initialiseAppJsonProcessing(instance, file, options) {
+        var pageToProcess = "index.html",
+            rootDir       = options.pageRoot || file,
+            appJson       = grunt.file.readJSON(file + "/app.json");
+        if (appJson.indexHtmlPath) {
+            pageToProcess = appJson.indexHtmlPath;
+        }
+        if (appJson.js.length === 2) {
+            file = appJson.js[1].path;
+        } else if (options.appJs) {
+            file = options.appJs;
+        } else {
+            grunt.log.error("Could not detect which file contains your Ext.application - Please set the appJs property");
+        }
+        return new PhantomJsHeadlessAnalyzer(
+            file, appJson, rootDir, pageToProcess
+        );
+    }
+
+    function getAndConfigureDependencyTracker(instance) {
+        var file    = shouldUseAppJson(instance),
+            options = instance.options({
+                isTouch: false,
+                printDepGraph: false,
+                mode: "phantom",
+                pageRoot: ""
+            });
+        if (file) {
+            grunt.log.writeln("Processing Sencha app.json file " + file);
+            return initialiseAppJsonProcessing(instance, file, options);
+        } else {
+            if (options.appFile && !options.appJs) {
+                options.appJs = options.appFile;
+            }
+            grunt.log.writeln("Processing Sencha app file " + options.appJs + " in mode " + options.mode + "...");
+            return new modes[options.mode](
+                options.appJs, options.senchaDir, options.pageRoot,
+                !!options.isTouch, !!options.printDepGraph
+            );
+        }
+    }
+
+    function shouldUseAppJson(instance) {
+        var fileObj, file, stats;
+        if (instance.files.length === 1) {
+            fileObj = instance.files[0];
+            file    = fileObj.src ? fileObj.src[0] : fileObj.orig.src[0];
+            stats   = fs.statSync(file);
+            if (stats.isDirectory()) {
+                // if is dir - check for app.json
+                if (fs.existsSync(file + "/app.json")) {
+                    return file;
+                }
+            }
+        } else if (instance.files.length > 1) {
+            grunt.log.error("grunt-sencha-dependencies currently only supports working with one src file. You have supplied " + instance.files.length);
+        }
+        return false;
+    }
 
     grunt.registerMultiTask("sencha_dependencies", "Task to generate the ordered array of sencha depdendencies", function () {
-        var options,
-            dependencyChecker,
-            doneFn,
-            me = this;
-        options = this.options({
-            isTouch: false,
-            printDepGraph: false,
-            mode: "phantom"
-        });
-        doneFn = function (filesLoadedSoFar, target) {
-            grunt.log.ok("Success! " + filesLoadedSoFar.length + " files added to property " + "sencha_dependencies_" + target);
-            grunt.verbose.writeln("Files are:\n    " + filesLoadedSoFar.join("\n    "));
-            grunt.config.set("sencha_dependencies_" + target, filesLoadedSoFar);
-        };
-        if (options.appFile && !options.appJs) {
-            options.appJs = options.appFile;
-        }
-        grunt.log.writeln("Processing Sencha app file " + options.appJs + " in mode " + options.mode + "...");
-        dependencyChecker = new modes[options.mode](
-            options.appJs, options.senchaDir, options.pageRoot,
-            !!options.isTouch, !!options.printDepGraph
-        );
+        var me                = this,
+            dependencyChecker = getAndConfigureDependencyTracker(me),
+            done;
         if (dependencyChecker.isAsync) {
-            var done = this.async();
+            done = me.async();
             dependencyChecker.getDependencies(function (files) {
                 doneFn(files, me.target);
                 done();
-            }, this);
+            }, me);
         } else {
-            doneFn(dependencyChecker.getDependencies(this), this.target);
+            doneFn(dependencyChecker.getDependencies(me), me.target);
         }
     });
 

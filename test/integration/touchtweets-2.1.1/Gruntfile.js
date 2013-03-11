@@ -8,20 +8,7 @@ module.exports = function(grunt) {
 
         sencha_dependencies: {
           app: {
-            options : {
-              appFile: 'app.js',
-              senchaDir: '../libs/touch-2.1.1',
-              isTouch: true
-            },
-          },
-          dynMockMode: {
-            options : {
-              appFile: 'app.js',
-              senchaDir: '../libs/touch-2.1.1',
-              isTouch: true,
-              mode: 'dynMock',
-              printDepGraph: false
-            }
+            src: "."
           }
         },
 

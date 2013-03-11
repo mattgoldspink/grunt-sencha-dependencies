@@ -12,14 +12,6 @@ module.exports = function(grunt) {
               appFile: 'app/app.js',
               senchaDir: '../libs/ext-4.1.1a'
             }
-          },
-          dynEmMode: {
-            options : {
-              appFile: 'app/app.js',
-              senchaDir: '../libs/ext-4.1.1a',
-              mode: 'dynMock',
-              printDepGraph: false
-            }
           }
         },
 
