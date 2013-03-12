@@ -1,6 +1,6 @@
 "use strict";
 
-var DynamicAnalyserMockingExtSystem;
+var splitArrayIntoThree;
 /*
   ======== A Handy Little Nodeunit Reference ========
   https://github.com/caolan/nodeunit
@@ -23,13 +23,13 @@ var DynamicAnalyserMockingExtSystem;
 
 exports.sencha_dependencies = {
     setUp: function (done) {
-        DynamicAnalyserMockingExtSystem = require("../tasks/lib/DynamicAnalyserMockingExtSystem.js");
+        splitArrayIntoThree = require("../tasks/lib/splitArrayIntoThree.js");
         // setup here if necessary
         done();
     },
-    can_load_DynamicAnalyserMockingExtSystem: function (test) {
+    "splitArrayIntoThree is loaded": function (test) {
         test.expect(1);
-        test.ok(DynamicAnalyserMockingExtSystem, "loaded DynamicAnalyserMockingExtSystem");
+        test.ok(splitArrayIntoThree, "loaded splitArrayIntoThree");
         test.done();
     }
 };

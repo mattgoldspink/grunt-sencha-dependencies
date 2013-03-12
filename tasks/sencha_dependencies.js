@@ -9,6 +9,8 @@
 "use strict";
 
 var fs                              = require("fs"),
+    path                            = require("path"),
+    splitArrayIntoThree             = require("./lib/splitArrayIntoThree.js"),
     DynamicHeadlessBrowserEmulator  = require("./lib/DynamicHeadlessBrowserEmulator.js"),
     PhantomJsHeadlessAnalyzer       = require("./lib/PhantomJsHeadlessAnalyzer.js"),
     DynamicAnalyserMockingExtSystem = require("./lib/DynamicAnalyserMockingExtSystem.js"),
@@ -20,9 +22,9 @@ var fs                              = require("fs"),
 
 module.exports = function (grunt) {
 
-    function doneFn(filesLoadedSoFar, target) {
-        grunt.log.ok("Success! " + filesLoadedSoFar.length + " files added to property " + "sencha_dependencies_" + target);
-        grunt.verbose.writeln("Files are:\n    " + filesLoadedSoFar.join("\n    "));
+    function doneFn(filesLoadedSoFar, target, senchaDir) {
+
+        splitArrayIntoThree(filesLoadedSoFar, senchaDir, grunt, "sencha_dependencies_" + target);
         grunt.config.set("sencha_dependencies_" + target, filesLoadedSoFar);
     }
 
@@ -45,21 +47,25 @@ module.exports = function (grunt) {
         );
     }
 
-    function getAndConfigureDependencyTracker(instance) {
-        var file    = shouldUseAppJson(instance),
-            options = instance.options({
-                isTouch: false,
-                printDepGraph: false,
-                mode: "phantom",
-                pageRoot: ""
-            });
+    function getOptions(instance) {
+        var options = instance.options({
+            isTouch: false,
+            printDepGraph: false,
+            mode: "phantom",
+            pageRoot: ""
+        });
+        if (options.appFile && !options.appJs) {
+            options.appJs = options.appFile;
+        }
+        return options;
+    }
+
+    function getAndConfigureDependencyTracker(instance, options) {
+        var file = shouldUseAppJson(instance);
         if (file) {
             grunt.log.writeln("Processing Sencha app.json file " + file);
             return initialiseAppJsonProcessing(instance, file, options);
         } else {
-            if (options.appFile && !options.appJs) {
-                options.appJs = options.appFile;
-            }
             grunt.log.writeln("Processing Sencha app file " + options.appJs + " in mode " + options.mode + "...");
             return new modes[options.mode](
                 options.appJs, options.senchaDir, options.pageRoot,
@@ -88,16 +94,17 @@ module.exports = function (grunt) {
 
     grunt.registerMultiTask("sencha_dependencies", "Task to generate the ordered array of sencha depdendencies", function () {
         var me                = this,
-            dependencyChecker = getAndConfigureDependencyTracker(me),
+            options           = getOptions(me),
+            dependencyChecker = getAndConfigureDependencyTracker(me, options),
             done;
         if (dependencyChecker.isAsync) {
             done = me.async();
             dependencyChecker.getDependencies(function (files) {
-                doneFn(files, me.target);
+                doneFn(files, me.target, dependencyChecker.getSenchaFrameworkDir());
                 done();
             }, me);
         } else {
-            doneFn(dependencyChecker.getDependencies(me), me.target);
+            doneFn(dependencyChecker.getDependencies(me), me.target, path.relative(options.pageRoot + options.senchaDir));
         }
     });
 

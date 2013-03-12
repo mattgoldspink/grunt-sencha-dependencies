@@ -6,9 +6,11 @@ module.exports = function (history, senchaCoreFile, pageRoot, appJsFilePath, pri
     var files = [senchaCoreFile];
     for (var i = 0, len = history.length; i < len; i++) {
         var filePath = conversionFn ? conversionFn(history[i]) : history[i];
-        files.push(path.normalize(pageRoot + "/" + filePath));
+        filePath = filePath.replace(/^file:(\/)*/, "/");
+        filePath = path.relative(pageRoot, filePath);
+        files.push(filePath);
         if (printDepGraph) {
-            grunt.log.writeln(path.normalize(pageRoot + "/" + filePath));
+            grunt.log.writeln(filePath);
         }
     }
     files.push(path.normalize(pageRoot + "/" + appJsFilePath));

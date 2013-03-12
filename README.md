@@ -22,23 +22,22 @@ If the plugin has been installed correctly, running `grunt --help` at the comman
 
 ## The "sencha_dependencies" task
 
-### Overview
-In your project's Gruntfile, add a section named `sencha_dependencies` to the data object passed into `grunt.initConfig()`.
+This task tasks a Sencha Touch or Ext.js project and will setup 3 properties with all of the Ext class file dependencies in the correct order for concatenation. The properties generated are:
+
+- `sencha_dependencies_{target}` - All the files your application depends on in the correct dependency order for starting up (including the `ext-debug.js` or `sencha-touch-debug.js` and the file containing your `Ext.application`)
+- `sencha_dependencies_{target}_ext_core` - A subset of the above that includes only the files from the core Ext.js or Sencha Touch framework
+- `sencha_dependencies_{target}_app` - A subset of `sencha_dependencies_{target}` which includes only the files that are not in `sencha_dependencies_{target}_ext_core`
+
+Where `{target}` is the name of your target in the Grunt configuration. For example if you configuration was:
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    options: {
-      // Task-specific options go here.
-    },
-    your_target: {
-      // Target-specific file lists and/or options go here.
-    }
+    prod:  "."
   }
 })
 ```
-
-See below for the options and examples.
+Your target is `prod` and hence the properties generaties would be `sencha_dependencies_prod`, `sencha_dependencies_prod_ext_core` and `sencha_dependencies_prod_app`.
 
 ### Quick start - if you previously used Sencha Cmd
 
@@ -67,11 +66,11 @@ grunt.initConfig({
 })
 ```
 
-You shouldn't need any of the below options.
+Note: You shouldn't need any of the below options unless you have more than 2 files listed in your app.json js property. In which case you will be asked to set the appJs property to name the one which contains you `Ext.application` call.
 
 ### Options
 
-These options are for people who don't start with an app.json file generated from Sencha Cmd.
+These options are typically for people who don't start with an app.json file generated from Sencha Cmd.
 
 #### options.pageRoot
 Type: `String`
@@ -83,7 +82,7 @@ If your index.html is in a different directory to where you are running grunt fr
 Type: `String`
 Default value: undefined
 
-This should be the string path to your file which contains the `Ext.application` call which initialises your application. This should be set relative to the `pageRoot` property.
+This should be the string path to your file which contains the `Ext.application` call which initialises your application. This should be set relative to the `pageRoot` property. If you're running this task against a project generated with Sencha Cmd and you have more than 2 files listed in your app.json js property then you should set this value to be the name of the one which contains your `Ext.application`.
 
 #### options.senchaDir
 Type: `String`
@@ -91,29 +90,31 @@ Default value: undefined
 
 This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there. This should be set relative to the `pageRoot` property.
 
-#### options.mode
+#### options.isTouch
+Type: `Boolean`
+Default value: false
+
+Whether this is a Sencha Touch project or not. When using `phantom` mode (which is the default) you shouldn't need to set this.
+
+#### options.printDepGraph
+Type: `Boolean`
+Default value: false
+
+If you think things aren't being resolved correctly you can set this to true as the task runs it will print a full depdency graph as it comes across classes. In addition you should use the `--verbose` flag built into grunt which will also show you the files the task found in the order they will be used by the next task.
+
+NOTE: this only works in `dynMock` mode at the moment.
+
+#### options.mode `deprecated`
 Type: `String`
 Default value: phantom
+
+NOTE: this option will disappear in the next release and only `phantom` will be used.
 
 One of `phantom`, `dynHeadless` or `dynMock` - This tells the task which strategy to use to figure out the dependencies.
 
 - `phantom` - will look for an index.html in the `pageRoot` directory and run that page headlessly in phantomJs. When the page has finished loading it will then look at what files Ext downloaded for the classes. NOTE if other files were downloaded into the page they will not be tracked, only those done through the Ext.Loader are captured.
 - `dynHeadless` - will try to run the whole app in a headless browser and intercept the Ext.application.launch call. This is usually the most accurate, but it's also possible that it may break if your code does too much dynamic or depends on some certain browser api's which aren't available. If you find your app doesn't compile correctly in this mode then try `dynMock`
 - `dynMock` - will try to run the app.js file but it intercepts all the calls to Ext.js/Sencha Touch class creation and loading api's. This means we don't try to run too many pieces of unnecessary code which could cause breaks.
-
-#### options.isTouch
-Type: `Boolean`
-Default value: false
-
-Whether this is a Sencha Touch project or not.
-
-#### options.printDepGraph
-Type: `Boolean`
-Default value: false
-
-If you think things aren't being resolved correctly you can set this to true as the task runs it will print a full depdency graph as it comes across classes. In addition you should use the ```--verbose``` flag built into grunt which will also show you the files the task found in the order they will be used by the next task.
-
-NOTE: this only works in `dynMock` mode at the moment.
 
 ### Usage Examples for non Sencha Cmd generated apps
 
@@ -186,11 +187,13 @@ grunt.loadNpmTasks('grunt-sencha-dependencies');
 grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
 ```
 
-### Larger example
+### Larger examples
 
-Included in the repository is a copy of the Ext.js Pandora application which they use to showcase their MVC walkthroughs. This can be found under ```tests/integration/pandora-ext-4.1.1a``` and should be a fully working example.
+Included in the repository is a copy of some of the Ext.js and Sencha Touch examples. All the grunt files in these examples figure out the dependencies, then minify & concat the source using UglifyJS and also generate source-maps which can be used to debug the actual source code files on a minified file. Finally the output is all written to the `dest` folder in that same directory.
 
-NOTE: Their example does not manage it's dependencies correctly as it does not declare a few files upfront (notably Ext.container.ButtonGroup). I've left the example broken like this so I can do a "like for like" comparison of the resulting file list. However the build file for the example does copy over the whole of the ext.js lib anway to keep the example working when it is built and minified.
+- ```tests/integration/pandora-ext-4.1.1a``` - is the Ext 4.1.1a Pandora MVC example, it doesn't not use Sencha Cmd and shows how to configure a build when that has not been used
+- ```tests/integration/stockapp-senchatouch-2.1.1``` - A Sencha Touch 2.1.1 example using Touch Charts originally generated using Sencha Cmd and shows how to configure a build with a pre-existing app.json file
+- ```tests/integration/touchtweets-2.1.1``` - A Sencha Touch 2.1.1 example using MVC which was originally generated using Sencha Cmd and shows how to configure a build with a pre-existing app.json file
 
 #### When you're running grunt from a different directory to your index.html page
 
@@ -230,6 +233,8 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 
 ## Release History
 
+- 0.5.2 - Now generate 3 properties of files: sencha_dependencies_{target}, sencha_dependencies_{target}_ext_core and sencha_dependencies_{target}_app
+- 0.5.1 - Added support to use app.json from Sencha Cmd to make it easier for existing users to migrate
 - 0.5.0 - Switched the default mode to use PhantomJs to capture the loaded classes
 - 0.4.0 - Added pageRoot support for when your index.html is not in the root directory
 - 0.2.5 - Initial Touch support - tested against the Sencha Stock App - likely still bugs with other apps though
