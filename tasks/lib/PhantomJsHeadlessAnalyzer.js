@@ -93,19 +93,32 @@ PhantomJsHeadlessAnalyzer.prototype.getSenchaCoreFile = function () {
     return path.normalize(this.pageRoot + "/" + this.senchaDir  + "/" + (this.isTouch ? "sencha-touch-debug.js" : "ext-debug.js"));
 };
 
+PhantomJsHeadlessAnalyzer.prototype.normaliseFilePaths = function (filePaths) {
+    var output = [];
+    for (var i = 0, len = filePaths.length; i < len; i++) {
+        output.push(this.normaliseFilePath(filePaths[i]));
+    }
+    return output;
+};
+
+PhantomJsHeadlessAnalyzer.prototype.normaliseFilePath = function (filePath) {
+    filePath = filePath.replace(/^file:(\/)*/, "/");
+    if (!/^\//.test(filePath)) {
+        filePath = this.pageRoot + "/" + filePath;
+    }
+    return path.normalize(this.pageRoot + "/" + path.relative(this.pageRoot, filePath));
+};
+
 PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
     var files = [],
         coreFile = this.getSenchaCoreFile(),
         appFile = path.normalize(this.pageRoot + "/" + this.appJsFilePath);
     files.push(coreFile);
     for (var i = 0, len = history.length; i < len; i++) {
-        var filePath = history[i];
-        filePath = filePath.replace(/^file:(\/)*/, "/");
-        if (!/^\//.test(filePath)) {
-            filePath = this.pageRoot + "/" + filePath;
-        }
-        filePath = path.normalize(this.pageRoot + "/" + path.relative(this.pageRoot, filePath));
-        if (filePath !== appFile) {
+        var filePath = this.normaliseFilePath(history[i]);
+        if (filePath !== appFile &&
+                !/\/ext(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
+                !/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(filePath)) {
             var stats   = fs.statSync(filePath);
             if (!stats.isDirectory()) {
                 files.push(filePath);
@@ -151,23 +164,41 @@ function turnUrlIntoRelativeDirectory(relativeTo, url) {
     return path.relative(relativeTo, url.substring(0, url.lastIndexOf("/")));
 }
 
-function resolveTheTwoFileSetsToBeInTheRightOrder(allScripts, history) {
-    /*var startReplaceAfterThisItem = null;
+PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = function(allScripts, history) {
+    // fix all paths to be normalised
+    allScripts = this.normaliseFilePaths(allScripts);
+    history = this.normaliseFilePaths(history);
+    var startReplaceAfterThisItem = null;
     // 1) start iterating through allScripts and find the first file in the history list
     for (var i = 0, len = allScripts.length; i < len; i++) {
-        if (allScripts[i] === history[0]) {
+        if (history.indexOf(allScripts[i]) > -1) {
             startReplaceAfterThisItem = allScripts[i - 1];
+            break;
         }
     }
     // 2) now remove all the history files from allScripts
-    for (var i = 0, len = allScripts.length; i < len; i++) {
-        if (allScripts[i] === history[0]) {
-
+    for (var i = 0, len = history.length; i < len; i++) {
+        var indexToRemove = allScripts.indexOf(history[i]);
+        if (indexToRemove > -1) {
+            allScripts.splice(indexToRemove, 1);
         }
     }
-    // 3) insert all the correctly ordered history files at the start point we found*/
-    return history
-}
+
+    // 3) insert all the correctly ordered history files at the start point we found
+    var notFound = true, i = 0;
+    while (notFound && i < allScripts.length) {
+        if (allScripts[i] === startReplaceAfterThisItem) {
+            history.unshift(i, 0);
+            allScripts.splice.apply(allScripts, history);
+            notFound = false;
+        }
+        i++;
+    }
+    if (notFound) {
+        grunt.log.error("An error occured whilst trying to calculate the dependencies");
+    }
+    return allScripts;
+};
 
 PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     var me = this,
@@ -177,10 +208,10 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
 
     phantomjs.on("onResourceRequested", function (response) {
         if (!hasSeenSenchaLib) {
-            if (/ext(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
+            if (/\/ext(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
                 me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
                 hasSeenSenchaLib = true;
-            } else if (/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
+            } else if (/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
                 me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
                 me.isTouch = true;
                 hasSeenSenchaLib = true;
@@ -194,12 +225,12 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         if (errorCount.length === 1) {
             grunt.log.warn("A JavaScript error occured whilst loading your page - this could cause problems with the generated file list. Run with -v to see all errors");
         }
-        grunt.verbose.warn(msg);
+        grunt.log.warn(msg);
     });
 
     // Create some kind of "all done" event.
     phantomjs.on("mytask.done", function (foundFiles) {
-        files = resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
+        files = me.resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
         phantomjs.halt();
     });
 
@@ -207,11 +238,15 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     phantomjs.on("fail.load", function (url) {
         phantomjs.halt();
         grunt.warn("PhantomJS unable to load URL " + url);
+        grunt.file["delete"](tempPage);
+
     });
 
     phantomjs.on("fail.timeout", function () {
         phantomjs.halt();
         grunt.warn("PhantomJS timed out.");
+        grunt.file["delete"](tempPage);
+
     });
 
     var tempPage = this.setHtmlPageToProcess();
