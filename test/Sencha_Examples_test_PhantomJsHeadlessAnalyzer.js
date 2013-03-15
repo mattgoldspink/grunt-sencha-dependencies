@@ -143,8 +143,8 @@ makeDefaultTestsForExample("stockapp-senchatouch-2.1.1",
     }
 );
 
-xmakeDefaultTestsForExample("touchtweets-2.0.1",
-    tests, 224,
+makeDefaultTestsForExample("touchtweets-2.0.1",
+    tests, 198,
     "test/integration/touchtweets-2.0.1/app.js",
     "app.js", "../libs/touch-2.0.1",
     "test/integration/touchtweets-2.0.1/",

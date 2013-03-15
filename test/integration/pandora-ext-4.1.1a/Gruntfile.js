@@ -10,8 +10,8 @@ module.exports = function(grunt) {
           app: {
             options : {
               appFile: 'app/app.js',
-              senchaDir: '../libs/ext-4.1.1a',
-              pageRoot: "."
+              pageRoot: ".",
+              pageToProcess: "index.html"
             }
           }
         },

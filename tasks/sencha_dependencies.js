@@ -11,19 +11,11 @@
 var fs                              = require("fs"),
     path                            = require("path"),
     splitArrayIntoThree             = require("./lib/splitArrayIntoThree.js"),
-    DynamicHeadlessBrowserEmulator  = require("./lib/DynamicHeadlessBrowserEmulator.js"),
-    PhantomJsHeadlessAnalyzer       = require("./lib/PhantomJsHeadlessAnalyzer.js"),
-    DynamicAnalyserMockingExtSystem = require("./lib/DynamicAnalyserMockingExtSystem.js"),
-    modes = {
-        "dynHeadless" :  DynamicHeadlessBrowserEmulator,
-        "phantom" :  PhantomJsHeadlessAnalyzer,
-        "dynMock" : DynamicAnalyserMockingExtSystem
-    };
+    PhantomJsHeadlessAnalyzer       = require("./lib/PhantomJsHeadlessAnalyzer.js");
 
 module.exports = function (grunt) {
 
     function doneFn(filesLoadedSoFar, target, senchaDir) {
-
         splitArrayIntoThree(filesLoadedSoFar, senchaDir, grunt, "sencha_dependencies_" + target);
         grunt.config.set("sencha_dependencies_" + target, filesLoadedSoFar);
     }
@@ -51,7 +43,6 @@ module.exports = function (grunt) {
         var options = instance.options({
             isTouch: false,
             printDepGraph: false,
-            mode: "phantom",
             pageRoot: ""
         });
         if (options.appFile && !options.appJs) {
@@ -66,10 +57,9 @@ module.exports = function (grunt) {
             grunt.log.writeln("Processing Sencha app.json file " + file);
             return initialiseAppJsonProcessing(instance, file, options);
         } else {
-            grunt.log.writeln("Processing Sencha app file " + options.appJs + " in mode " + options.mode + "...");
-            return new modes[options.mode](
-                options.appJs, options.senchaDir, options.pageRoot,
-                !!options.isTouch, !!options.printDepGraph
+            grunt.log.writeln("Processing Sencha app file " + (options.pageToProcess ?  options.pageToProcess : options.appJs) + "...");
+            return new PhantomJsHeadlessAnalyzer(
+                options.appJs, options.senchaDir, options.pageRoot, options.pageToProcess
             );
         }
     }
@@ -97,15 +87,11 @@ module.exports = function (grunt) {
             options           = getOptions(me),
             dependencyChecker = getAndConfigureDependencyTracker(me, options),
             done;
-        if (dependencyChecker.isAsync) {
-            done = me.async();
-            dependencyChecker.getDependencies(function (files) {
-                doneFn(files, me.target, dependencyChecker.getSenchaFrameworkDir());
-                done();
-            }, me);
-        } else {
-            doneFn(dependencyChecker.getDependencies(me), me.target, path.relative(options.pageRoot + options.senchaDir));
-        }
+        done = me.async();
+        dependencyChecker.getDependencies(function (files) {
+            doneFn(files, me.target, dependencyChecker.getSenchaFrameworkDir());
+            done();
+        }, me);
     });
 
 };

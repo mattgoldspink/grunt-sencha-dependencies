@@ -38,14 +38,25 @@ sendMessage("private", "version", phantom.version);
 // Abort if the page doesn"t send any messages for a while.
 setInterval(function () {
     if (new Date() - last > options.timeout) {
-        page.evaluate(function () {
+        var collectAllScriptTagsFn = function() {
             var files = [],
+                scripts = document.querySelectorAll("script"),
+                i, len, file,
+                historyFiles = [],
                 history = Ext.Loader.history;
-            for (var i = 0, len = history.length; i < len; i++) {
-                files.push(Ext.Loader.getPath(history[i]));
+            for (i = 0, len = scripts.length; i < len; i++) {
+                file = scripts[i].src.split('?');
+                files.push(file[0]);
             }
-            sendMessage("mytask.done", files);
-        });
+            for (i = 0, len = history.length; i < len; i++) {
+                historyFiles.push(Ext.Loader.getPath(history[i]));
+            }
+            sendMessage("mytask.done", {
+                scriptTags: files,
+                history: historyFiles
+            });
+        };
+        page.evaluate(collectAllScriptTagsFn);
         sendMessage("fail.timeout");
         phantom.exit();
     }

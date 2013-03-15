@@ -11,7 +11,6 @@
  */
 var grunt        = require("grunt"),
     phantomjs    = require("grunt-lib-phantomjs").init(grunt),
-    reorderFiles = require("./reorderFiles.js"),
     // Nodejs libs.
     path         = require("path"),
     fs           = require("fs"),
@@ -34,18 +33,16 @@ var grunt        = require("grunt"),
  * @param {boolean/string} isTouchOrPageToProcess If you set the Sencha framework dir then this should be true if you're using Sencha Touch.
  *                                 If you're using an app.json this will be the html page that should be used to process in phantomjs
  *                                 relative to the pageRoot
- * @param {boolean} printDepGraph if you want the dependency graph printed as it's generated - this doesn't work correctly atm
+ * @param {boolean} pageToProcess The page that will be processed when looking for tags
  */
-function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, printDepGraph) {
-    this.isAsync              = true;
+function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, pageToProcess) {
     this.appJsFilePath        = appJsFilePath;
     this.setPageRoot(pageRoot);
+    this.pageToProcess        = pageToProcess;
     if (typeof senchaDirOrAppJson === "object") {
         // we're in mode where we use appJson
         this.appJson          = senchaDirOrAppJson;
-        this.pageToProcess    = this.appJson.indexHtmlPath || "index.html";
     } else {
-        this.printDepGraph    = !!printDepGraph;
         if (senchaDirOrAppJson) {
             this.setSenchaDir(senchaDirOrAppJson);
         }
@@ -96,16 +93,26 @@ PhantomJsHeadlessAnalyzer.prototype.getSenchaCoreFile = function () {
     return path.normalize(this.pageRoot + "/" + this.senchaDir  + "/" + (this.isTouch ? "sencha-touch-debug.js" : "ext-debug.js"));
 };
 
-PhantomJsHeadlessAnalyzer.prototype.reOrderFiles = function (history) {
-    var files = [this.getSenchaCoreFile()];
+PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
+    var files = [],
+        coreFile = this.getSenchaCoreFile(),
+        appFile = path.normalize(this.pageRoot + "/" + this.appJsFilePath);
+    files.push(coreFile);
     for (var i = 0, len = history.length; i < len; i++) {
         var filePath = history[i];
-        files.push(path.normalize(this.pageRoot + "/" + filePath));
-        if (this.printDepGraph) {
-            grunt.log.writeln(path.normalize(this.pageRoot + "/" + filePath));
+        filePath = filePath.replace(/^file:(\/)*/, "/");
+        if (!/^\//.test(filePath)) {
+            filePath = this.pageRoot + "/" + filePath;
+        }
+        filePath = path.normalize(this.pageRoot + "/" + path.relative(this.pageRoot, filePath));
+        if (filePath !== appFile) {
+            var stats   = fs.statSync(filePath);
+            if (!stats.isDirectory()) {
+                files.push(filePath);
+            }
         }
     }
-    files.push(path.normalize(this.pageRoot + "/" + this.appJsFilePath));
+    files.push(appFile);
     return files;
 };
 
@@ -144,17 +151,40 @@ function turnUrlIntoRelativeDirectory(relativeTo, url) {
     return path.relative(relativeTo, url.substring(0, url.lastIndexOf("/")));
 }
 
+function resolveTheTwoFileSetsToBeInTheRightOrder(allScripts, history) {
+    /*var startReplaceAfterThisItem = null;
+    // 1) start iterating through allScripts and find the first file in the history list
+    for (var i = 0, len = allScripts.length; i < len; i++) {
+        if (allScripts[i] === history[0]) {
+            startReplaceAfterThisItem = allScripts[i - 1];
+        }
+    }
+    // 2) now remove all the history files from allScripts
+    for (var i = 0, len = allScripts.length; i < len; i++) {
+        if (allScripts[i] === history[0]) {
+
+        }
+    }
+    // 3) insert all the correctly ordered history files at the start point we found*/
+    return history
+}
+
 PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     var me = this,
         errorCount = [],
-        files = null;
+        files = null,
+        hasSeenSenchaLib = false;
 
     phantomjs.on("onResourceRequested", function (response) {
-        if (/ext(-all|-all-debug|-debug){1}.js/.test(response.url)) {
-            me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
-        } else if (/sencha-touch(-all|-all-debug|-debug){1}.js/.test(response.url)) {
-            me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
-            me.isTouch = true;
+        if (!hasSeenSenchaLib) {
+            if (/ext(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
+                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
+                hasSeenSenchaLib = true;
+            } else if (/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
+                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
+                me.isTouch = true;
+                hasSeenSenchaLib = true;
+            }
         }
         grunt.verbose.writeln(response.url);
     });
@@ -164,11 +194,12 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         if (errorCount.length === 1) {
             grunt.log.warn("A JavaScript error occured whilst loading your page - this could cause problems with the generated file list. Run with -v to see all errors");
         }
+        grunt.verbose.warn(msg);
     });
 
     // Create some kind of "all done" event.
     phantomjs.on("mytask.done", function (foundFiles) {
-        files = foundFiles;
+        files = resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
         phantomjs.halt();
     });
 
@@ -196,12 +227,8 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
             for (var i = 0, len = errorCount.length; i < len; i++) {
                 grunt.verbose.error(errorCount[i]);
             }
-            doneFn(reorderFiles(
-                files,
-                me.getSenchaCoreFile(),
-                me.pageRoot,
-                me.appJsFilePath,
-                me.printDepGraph
+            doneFn(me.reorderFiles(
+                files
             ));
             grunt.file["delete"](tempPage);
         }

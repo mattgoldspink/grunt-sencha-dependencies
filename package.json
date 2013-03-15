@@ -29,7 +29,6 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "domino": "1.0.8",
     "grunt-lib-phantomjs": "0.2.0"
   },
   "devDependencies": {
