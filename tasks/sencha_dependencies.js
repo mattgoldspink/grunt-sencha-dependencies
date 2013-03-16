@@ -41,8 +41,6 @@ module.exports = function (grunt) {
 
     function getOptions(instance) {
         var options = instance.options({
-            isTouch: false,
-            printDepGraph: false,
             pageRoot: ""
         });
         if (options.appFile && !options.appJs) {

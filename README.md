@@ -1,6 +1,6 @@
 # grunt-sencha-dependencies [![Build Status](https://api.travis-ci.org/mattgoldspink/grunt-sencha-dependencies.png?branch=master)](https://travis-ci.org/mattgoldspink/grunt-sencha-dependencies)
 
-> A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc
+> A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses and any additional &lt;script&gt; tags so the list can be passed on to further commands like concat, jshint, uglify.
 
 ## Getting Started
 
@@ -41,25 +41,38 @@ Your target is `prod` and hence the properties generaties would be `sencha_depen
 
 ### Quick start - if you previously used Sencha Cmd
 
-If you used Sencha Cmd and have an app.json file in your project then all you'll need to configure is the ```src``` property to point to your directory with this in. For example if you're running grunt in the same directory as your app.json it would be:
+If you have previously used Sencha Cmd and have an app.json file in your project then all you'll need to configure is the task to point to this directory.
+
+For example if you're running grunt in the same directory as your app.json it would be:
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    prod:  "."
+    dist:  "."
   }
 })
 ```
-If it's in a different directory then change it to point to that. To pass the found files into another task you can do:
+
+If it's in a different directory then change it to point to that.
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    prod:  "."
+    dist:  "./my-sencha-app"
+  }
+})
+```
+
+To pass the found files into another task you need to use the dynamic property style syntax:
+
+```js
+grunt.initConfig({
+  sencha_dependencies: {
+    dist:  "."
   },
   concat: {
-    prod: {
-      src: '<%= sencha_dependencies_prod %>',
+    dist: {
+      src: '<%= sencha_dependencies_dist %>',
       dest: 'build/app.js',
     }
   }
@@ -70,13 +83,19 @@ Note: You shouldn't need any of the below options unless you have more than 2 fi
 
 ### Options
 
-These options are typically for people who don't start with an app.json file generated from Sencha Cmd.
+These options are for people who don't start with an app.json file generated from Sencha Cmd.
 
 #### options.pageRoot
 Type: `String`
-Default value: current directory
+Default value: Directory in which grunt is run
 
-If your index.html is in a different directory to where you are running grunt from then you'll need to set this to be relative to current directory.
+Set this to be relative to the directory from which you run grunt.
+
+#### options.pageToProcess
+Type: `String`
+Default value: `undefined`
+
+The name of your main html page, usually `index.html`. This will be used by phantomjs and run headlessly to figure out what classes and &lt;script&gt; tags are loaded.
 
 #### options.appJs
 Type: `String`
@@ -88,47 +107,26 @@ This should be the string path to your file which contains the `Ext.application`
 Type: `String`
 Default value: undefined
 
+This property is only needed in the case where you don't set the `pageToProcess` property.
+
 This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there. This should be set relative to the `pageRoot` property.
-
-#### options.isTouch
-Type: `Boolean`
-Default value: false
-
-Whether this is a Sencha Touch project or not. When using `phantom` mode (which is the default) you shouldn't need to set this.
-
-#### options.printDepGraph
-Type: `Boolean`
-Default value: false
-
-If you think things aren't being resolved correctly you can set this to true as the task runs it will print a full depdency graph as it comes across classes. In addition you should use the `--verbose` flag built into grunt which will also show you the files the task found in the order they will be used by the next task.
-
-NOTE: this only works in `dynMock` mode at the moment.
-
-#### options.mode `deprecated`
-Type: `String`
-Default value: phantom
-
-NOTE: this option will disappear in the next release and only `phantom` will be used.
-
-One of `phantom`, `dynHeadless` or `dynMock` - This tells the task which strategy to use to figure out the dependencies.
-
-- `phantom` - will look for an index.html in the `pageRoot` directory and run that page headlessly in phantomJs. When the page has finished loading it will then look at what files Ext downloaded for the classes. NOTE if other files were downloaded into the page they will not be tracked, only those done through the Ext.Loader are captured.
-- `dynHeadless` - will try to run the whole app in a headless browser and intercept the Ext.application.launch call. This is usually the most accurate, but it's also possible that it may break if your code does too much dynamic or depends on some certain browser api's which aren't available. If you find your app doesn't compile correctly in this mode then try `dynMock`
-- `dynMock` - will try to run the app.js file but it intercepts all the calls to Ext.js/Sencha Touch class creation and loading api's. This means we don't try to run too many pieces of unnecessary code which could cause breaks.
 
 ### Usage Examples for non Sencha Cmd generated apps
 
+The below examples show how to configure the task with an application which hasn't used Sencha Cmd or doesn't have an app.json file.
+
 #### Basic example
-In this example the Ext.application is defined in a file called `app.js` in the `js` folder and the Sencha Ext.js 4.1.2 lib is installed in the directory `js/vendor/extjs-4.1.2`.
-The generated array of ordered files will be in a global variable called `sencha_dependencies_prod`
+
+In this example the Ext.application is defined in a file called `app.js` in the `js` folder, our page is called `index.html` and we're running grunt in the same directory as it
+The generated array of ordered files will be in a global variable called `sencha_dependencies_dist`
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    prod: {
+    dist: {
       options: {
         appJs: './js/app.js',
-        senchaDir: './js/vendor/extjs-4.1.2'
+        pageToProcess: 'index.html'
       }
     }
   }
@@ -136,23 +134,24 @@ grunt.initConfig({
 ```
 
 ####  How to use this with subsequent steps
+
 You can now use this generated array with other tasks - for example the most common use case is to concatenate these files together in the right order.
 
-Below is the simplest example. Note that you need to use the template syntax '<% %>' because at the time the JavaScript is evaluated in the below config the actual sencha_dependencies task will not have been run.
+Below is the simplest example. Note that you need to use the template syntax `<% %>` because at the time the JavaScript is evaluated in the below config the actual `sencha_dependencies` task will not have been run.
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    prod: {
+    dist: {
       options: {
         appJs: './js/app.js',
-        senchaDir: './js/vendor/extjs-4.1.2'
+        pageToProcess: 'index.html'
       }
     }
   },
   concat: {
-      prod: {
-        src: '<%= sencha_dependencies_prod %>',
+      dist: {
+        src: '<%= sencha_dependencies_dist %>',
         dest: 'build/app.js',
       }
     }
@@ -161,30 +160,32 @@ grunt.initConfig({
 grunt.loadNpmTasks('grunt-contrib-concat');
 grunt.loadNpmTasks('grunt-sencha-dependencies');
 
-grunt.registerTask('prod', ['sencha_dependencies:prod', 'concat:prod']);
+grunt.registerTask('dist', ['sencha_dependencies:dist', 'concat:dist']);
 ```
 
-Or if you wanted to run JSHint on all the files you could do:
+#### Running JSHint on just your app classes
+
+The task finds all the classes you depend on, from your app and Sencha's frameworks, but often you'll just want to run some tasks over your app files. The common example is running JSHint to validate your source code. The `sencha_dependencies` task produces 3 output properties one of which is all the non-sencha framework files, to use this:
 
 ```js
 grunt.initConfig({
   sencha_dependencies: {
-    prod: {
+    dist: {
       options: {
         appJs: './js/app.js',
-        senchaDir: './js/vendor/extjs-4.1.2'
+        pageToProcess: 'index.html'
       }
     }
   },
   jshint: {
-    prod: '<%= sencha_dependencies_prod %>'
+    dist: '<%= sencha_dependencies_dist_app %>'
   }
 });
 
 grunt.loadNpmTasks('grunt-contrib-jshint');
 grunt.loadNpmTasks('grunt-sencha-dependencies');
 
-grunt.registerTask('hint', ['sencha_dependencies:prod', 'jshint:prod']);
+grunt.registerTask('hint', ['sencha_dependencies:dist', 'jshint:dist']);
 ```
 
 ### Larger examples
@@ -221,7 +222,7 @@ grunt.initConfig({
       options: {
         pageRoot: './www', // relative to dir where grunt will be run
         appJs: 'app.js', // relative to www
-        senchaDir: 'lib/sencha-touch-2.1.0' // relative to www
+        pageToProcess: 'index.html' // relative to www
       }
     }
   }
@@ -229,10 +230,11 @@ grunt.initConfig({
 ```
 
 ## Contributing
-In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [grunt][].
+In lieu of a formal styleguide, take care to maintain the existing coding style, some of it is enforced by JSHint for you. Add unit tests for any new or changed functionality. Lint and test your code using [grunt][].
 
 ## Release History
 
+- 0.6.0 - Introduced the capability to use the index.html page of a project to simplify things further. Note the following properties are now dropped: `isTouch`, `mode`, `printDepGraph`
 - 0.5.2 - Now generate 3 properties of files: sencha_dependencies_{target}, sencha_dependencies_{target}_ext_core and sencha_dependencies_{target}_app
 - 0.5.1 - Added support to use app.json from Sencha Cmd to make it easier for existing users to migrate
 - 0.5.0 - Switched the default mode to use PhantomJs to capture the loaded classes
