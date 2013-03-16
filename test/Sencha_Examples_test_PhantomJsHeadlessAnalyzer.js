@@ -35,7 +35,8 @@ function makeRegularAnalyzer(appJsPath, frameworkDir, pageRoot) {
     return new PhantomJsHeadlessAnalyzer(
         appJsPath,
         frameworkDir,
-        pageRoot
+        pageRoot,
+        "index.html"
     );
 }
 

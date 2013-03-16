@@ -115,10 +115,11 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
         appFile = path.normalize(this.pageRoot + "/" + this.appJsFilePath);
     files.push(coreFile);
     for (var i = 0, len = history.length; i < len; i++) {
-        var filePath = this.normaliseFilePath(history[i]);
+        var filePath = history[i];//this.normaliseFilePath(history[i]);
         if (filePath !== appFile &&
                 !/\/ext(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
-                !/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(filePath)) {
+                !/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
+                !/\/microloader\/development.js/.test(filePath)) {
             var stats   = fs.statSync(filePath);
             if (!stats.isDirectory()) {
                 files.push(filePath);
@@ -164,20 +165,21 @@ function turnUrlIntoRelativeDirectory(relativeTo, url) {
     return path.relative(relativeTo, url.substring(0, url.lastIndexOf("/")));
 }
 
-PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = function(allScripts, history) {
+PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = function (allScripts, history) {
+    var i, len;
     // fix all paths to be normalised
     allScripts = this.normaliseFilePaths(allScripts);
     history = this.normaliseFilePaths(history);
     var startReplaceAfterThisItem = null;
     // 1) start iterating through allScripts and find the first file in the history list
-    for (var i = 0, len = allScripts.length; i < len; i++) {
+    for (i = 0, len = allScripts.length; i < len; i++) {
         if (history.indexOf(allScripts[i]) > -1) {
             startReplaceAfterThisItem = allScripts[i - 1];
             break;
         }
     }
     // 2) now remove all the history files from allScripts
-    for (var i = 0, len = history.length; i < len; i++) {
+    for (i = 0, len = history.length; i < len; i++) {
         var indexToRemove = allScripts.indexOf(history[i]);
         if (indexToRemove > -1) {
             allScripts.splice(indexToRemove, 1);
@@ -185,7 +187,8 @@ PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = f
     }
 
     // 3) insert all the correctly ordered history files at the start point we found
-    var notFound = true, i = 0;
+    var notFound = true;
+    i = 0;
     while (notFound && i < allScripts.length) {
         if (allScripts[i] === startReplaceAfterThisItem) {
             history.unshift(i, 0);
@@ -239,14 +242,12 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         phantomjs.halt();
         grunt.warn("PhantomJS unable to load URL " + url);
         grunt.file["delete"](tempPage);
-
     });
 
     phantomjs.on("fail.timeout", function () {
         phantomjs.halt();
         grunt.warn("PhantomJS timed out.");
         grunt.file["delete"](tempPage);
-
     });
 
     var tempPage = this.setHtmlPageToProcess();
@@ -259,13 +260,17 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         },
         // Complete the task when done.
         done: function (err) {
-            for (var i = 0, len = errorCount.length; i < len; i++) {
-                grunt.verbose.error(errorCount[i]);
+            try {
+                for (var i = 0, len = errorCount.length; i < len; i++) {
+                    grunt.verbose.error(errorCount[i]);
+                }
+                grunt.file["delete"](tempPage);
+                doneFn(me.reorderFiles(
+                    files
+                ));
+            } catch (e) {
+                grunt.file["delete"](tempPage);
             }
-            doneFn(me.reorderFiles(
-                files
-            ));
-            grunt.file["delete"](tempPage);
         }
     });
 
