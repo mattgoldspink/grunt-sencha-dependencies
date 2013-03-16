@@ -221,7 +221,7 @@ grunt.initConfig({
     prod: {
       options: {
         pageRoot: './www', // relative to dir where grunt will be run
-        appJs: 'app.js', // relative to www
+        appJs: 'js/app.js', // relative to www
         pageToProcess: 'index.html' // relative to www
       }
     }
