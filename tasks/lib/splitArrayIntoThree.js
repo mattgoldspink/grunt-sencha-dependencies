@@ -6,7 +6,7 @@ module.exports = function (array, senchaDir, grunt, prop_prefix) {
 
     for (var i = 0, len = array.length; i < len; i++) {
         var file = array[i];
-        if (regX.test(file)) {
+        if (regX.test(file) && !/(src|examples)\/ux/.test(file)) {
             ext_core_files.push(file);
         } else {
             app_files.push(file);
