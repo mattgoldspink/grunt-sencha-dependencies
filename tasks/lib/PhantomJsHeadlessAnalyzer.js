@@ -130,8 +130,7 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
     return files;
 };
 
-PhantomJsHeadlessAnalyzer.prototype.setHtmlPageToProcess = function () {
-    var tempPage = this.pageRoot + "/" + Math.floor(Math.random() * 1000000) + ".html";
+PhantomJsHeadlessAnalyzer.prototype.setHtmlPageToProcess = function (tempPage) {
     if (this.pageToProcess) {
         // create the html page
         grunt.file.copy(this.pageRoot + "/" + this.pageToProcess, tempPage, {
@@ -171,6 +170,7 @@ PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = f
     allScripts = this.normaliseFilePaths(allScripts);
     history = this.normaliseFilePaths(history);
     var startReplaceAfterThisItem = null;
+
     // 1) start iterating through allScripts and find the first file in the history list
     for (i = 0, len = allScripts.length; i < len; i++) {
         if (history.indexOf(allScripts[i]) > -1) {
@@ -207,7 +207,16 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     var me = this,
         errorCount = [],
         files = null,
-        hasSeenSenchaLib = false;
+        hasSeenSenchaLib = false,
+        tempPage = this.pageRoot + "/" + Math.floor(Math.random() * 1000000) + ".html";
+
+    function safeDeleteTempFile() {
+        try {
+            grunt.file["delete"](tempPage);
+        } catch (e) {
+            grunt.log.warn("An error occured whilst trying to delete the temporary file " + tempPage);
+        }
+    }
 
     phantomjs.on("onResourceRequested", function (response) {
         if (!hasSeenSenchaLib) {
@@ -220,7 +229,9 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
                 hasSeenSenchaLib = true;
             }
         }
-        grunt.verbose.writeln(response.url);
+        if (/\.js/.test(response.url)) {
+            grunt.verbose.writeln(response.url);
+        }
     });
 
     phantomjs.on("error.onError", function (msg) {
@@ -228,7 +239,7 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         if (errorCount.length === 1) {
             grunt.log.warn("A JavaScript error occured whilst loading your page - this could cause problems with the generated file list. Run with -v to see all errors");
         }
-        grunt.log.warn(msg);
+        grunt.verbose.error(msg);
     });
 
     // Create some kind of "all done" event.
@@ -239,18 +250,18 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
 
     // Built-in error handlers.
     phantomjs.on("fail.load", function (url) {
+        safeDeleteTempFile();
         phantomjs.halt();
         grunt.warn("PhantomJS unable to load URL " + url);
-        grunt.file["delete"](tempPage);
     });
 
     phantomjs.on("fail.timeout", function () {
+        safeDeleteTempFile();
         phantomjs.halt();
         grunt.warn("PhantomJS timed out.");
-        grunt.file["delete"](tempPage);
     });
 
-    var tempPage = this.setHtmlPageToProcess();
+    this.setHtmlPageToProcess(tempPage);
 
     // Spawn phantomjs
     phantomjs.spawn(tempPage, {
@@ -261,15 +272,13 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         // Complete the task when done.
         done: function (err) {
             try {
-                for (var i = 0, len = errorCount.length; i < len; i++) {
-                    grunt.verbose.error(errorCount[i]);
-                }
-                grunt.file["delete"](tempPage);
+                safeDeleteTempFile();
                 doneFn(me.reorderFiles(
                     files
                 ));
             } catch (e) {
-                grunt.file["delete"](tempPage);
+                grunt.log.error(e);
+                safeDeleteTempFile();
             }
         }
     });
