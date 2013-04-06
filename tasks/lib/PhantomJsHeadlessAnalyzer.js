@@ -49,6 +49,10 @@ function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, 
     }
 }
 
+PhantomJsHeadlessAnalyzer.prototype.setGrunt = function (gruntLive) {
+    grunt = gruntLive;
+};
+
 function removeTrailingSlash(path) {
     return path[path.length - 1] === "/" ? path.substring(0, path.length - 1) : path;
 }
@@ -230,16 +234,22 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
             }
         }
         if (/\.js/.test(response.url)) {
-            grunt.verbose.writeln(response.url);
+            grunt.log.debug(response.url);
         }
     });
 
-    phantomjs.on("error.onError", function (msg) {
+    phantomjs.on("error.onError", function (msg, trace) {
         errorCount.push(msg);
         if (errorCount.length === 1) {
-            grunt.log.warn("A JavaScript error occured whilst loading your page - this could cause problems with the generated file list. Run with -v to see all errors");
+            grunt.log.warn("A JavaScript error occured whilst loading your page - this could" +
+                            " cause problems with the generated file list. Run with -v to see all errors");
         }
-        grunt.verbose.error(msg);
+        var msgStack = ["ERROR: " + msg];
+        msgStack.push("TRACE:");
+        trace.forEach(function (t) {
+            msgStack.push(" -> " + t.file + ": " + t.line + (t["function"] ? " (in function \"" + t["function"] + "\")" : ""));
+        });
+        grunt.verbose.error(msgStack.join("\n"));
     });
 
     // Create some kind of "all done" event.
