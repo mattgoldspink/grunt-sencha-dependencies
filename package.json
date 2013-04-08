@@ -1,7 +1,7 @@
 {
   "name": "grunt-sencha-dependencies",
   "description": "A Grunt.js plugin which will figure out the order of Ext classes  your Ext.application uses so the list can be passed on to further commands like concat, jshint, etc",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "homepage": "https://github.com/mattgoldspink/grunt-sencha-dependencies",
   "author": {
     "name": "Matt Goldspink",
@@ -29,7 +29,7 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "grunt-lib-phantomjs": "0.2.0"
+    "grunt-lib-phantomjs": "0.3.0"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "0.1.1",
