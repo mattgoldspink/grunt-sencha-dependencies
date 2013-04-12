@@ -125,16 +125,13 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
                 !/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
                 !/\/microloader\/development.js/.test(filePath)) {
 
-            if(fs.existsSync(filePath)) {
-                
+            if (fs.existsSync(filePath)) {
                 var stats = fs.statSync(filePath);
-                
                 if (!stats.isDirectory()) {
                     files.push(filePath);
                 }
-                
             } else {
-                grunt.log.warn('Excluding non filesystem based file ' + filePath);
+                grunt.log.warn("Excluding non filesystem based file " + filePath);
             }
         }
     }

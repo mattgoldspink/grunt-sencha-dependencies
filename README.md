@@ -234,6 +234,8 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.6.4 - Don't stat non local files (Thanks to Alan Shaw)
+- 0.6.3 - Improved error reporting for JS errors from PhantomJS
 - 0.6.0 - Introduced the capability to use the index.html page of a project to simplify things further. Note the following properties are now dropped: `isTouch`, `mode`, `printDepGraph`
 - 0.5.2 - Now generate 3 properties of files: sencha_dependencies_{target}, sencha_dependencies_{target}_ext_core and sencha_dependencies_{target}_app
 - 0.5.1 - Added support to use app.json from Sencha Cmd to make it easier for existing users to migrate
