@@ -53,8 +53,8 @@ PhantomJsHeadlessAnalyzer.prototype.setGrunt = function (gruntLive) {
     grunt = gruntLive;
 };
 
-function removeTrailingSlash(path) {
-    return path[path.length - 1] === path.sep || "/" ? path.substring(0, path.length - 1) : path;
+function removeTrailingSlash(filePath) {
+    return filePath[filePath.length - 1] === path.sep ? filePath.substring(0, filePath.length - 1) : filePath;
 }
 
 PhantomJsHeadlessAnalyzer.prototype.setPageRoot = function (pageRoot) {
