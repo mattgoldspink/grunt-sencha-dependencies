@@ -54,7 +54,7 @@ PhantomJsHeadlessAnalyzer.prototype.setGrunt = function (gruntLive) {
 };
 
 function removeTrailingSlash(path) {
-    return path[path.length - 1] === "/" ? path.substring(0, path.length - 1) : path;
+    return path[path.length - 1] === path.sep || "/" ? path.substring(0, path.length - 1) : path;
 }
 
 PhantomJsHeadlessAnalyzer.prototype.setPageRoot = function (pageRoot) {
@@ -63,7 +63,7 @@ PhantomJsHeadlessAnalyzer.prototype.setPageRoot = function (pageRoot) {
 
 function oneOfExistsInDir(dir, options) {
     for (var i = 0, len = options.length; i < len; i++) {
-        if (fs.existsSync(dir + "/" + options[i])) {
+        if (fs.existsSync(dir + path.sep + options[i])) {
             return true;
         }
     }
@@ -90,11 +90,11 @@ PhantomJsHeadlessAnalyzer.prototype.setSenchaDir = function (_senchaDir) {
 };
 
 PhantomJsHeadlessAnalyzer.prototype.getSenchaFrameworkDir = function () {
-    return path.normalize(this.pageRoot + "/" + this.senchaDir);
+    return path.normalize(this.pageRoot + path.sep + this.senchaDir);
 };
 
 PhantomJsHeadlessAnalyzer.prototype.getSenchaCoreFile = function () {
-    return path.normalize(this.pageRoot + "/" + this.senchaDir  + "/" + (this.isTouch ? "sencha-touch-debug.js" : "ext-debug.js"));
+    return path.normalize(this.pageRoot + path.sep + this.senchaDir  + path.sep + (this.isTouch ? "sencha-touch-debug.js" : "ext-debug.js"));
 };
 
 PhantomJsHeadlessAnalyzer.prototype.normaliseFilePaths = function (filePaths) {
@@ -106,17 +106,17 @@ PhantomJsHeadlessAnalyzer.prototype.normaliseFilePaths = function (filePaths) {
 };
 
 PhantomJsHeadlessAnalyzer.prototype.normaliseFilePath = function (filePath) {
-    filePath = filePath.replace(/^file:(\/)*/, "/");
+    filePath = filePath.replace(/^file:(\/)*/, path.sep);
     if (!/^\//.test(filePath)) {
-        filePath = this.pageRoot + "/" + filePath;
+        filePath = this.pageRoot + path.sep + filePath;
     }
-    return path.normalize(this.pageRoot + "/" + path.relative(this.pageRoot, filePath));
+    return path.normalize(this.pageRoot + path.sep + path.relative(this.pageRoot, filePath));
 };
 
 PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
     var files = [],
         coreFile = this.getSenchaCoreFile(),
-        appFile = path.normalize(this.pageRoot + "/" + this.appJsFilePath);
+        appFile = path.normalize(this.pageRoot + path.sep + this.appJsFilePath);
     files.push(coreFile);
     for (var i = 0, len = history.length; i < len; i++) {
         var filePath = history[i];//this.normaliseFilePath(history[i]);
@@ -142,7 +142,7 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
 PhantomJsHeadlessAnalyzer.prototype.setHtmlPageToProcess = function (tempPage) {
     if (this.pageToProcess) {
         // create the html page
-        grunt.file.copy(this.pageRoot + "/" + this.pageToProcess, tempPage, {
+        grunt.file.copy(this.pageRoot + path.sep + this.pageToProcess, tempPage, {
             process: function (inputString) {
                 // we need to inject the bridge
                 return inputString.replace("<head>", "<head>" + sendMessageString);
@@ -217,7 +217,7 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         errorCount = [],
         files = null,
         hasSeenSenchaLib = false,
-        tempPage = this.pageRoot + "/" + Math.floor(Math.random() * 1000000) + ".html";
+        tempPage = this.pageRoot + path.sep + Math.floor(Math.random() * 1000000) + ".html";
 
     function safeDeleteTempFile() {
         try {
@@ -282,7 +282,7 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     phantomjs.spawn(tempPage, {
         // Additional PhantomJS options.
         options: {
-            phantomScript: asset("phantomjs/main.js")
+            phantomScript: asset("phantomjs" + path.sep + "main.js")
         },
         // Complete the task when done.
         done: function (err) {

@@ -10,8 +10,8 @@
 
 var fs                              = require("fs"),
     path                            = require("path"),
-    splitArrayIntoThree             = require("./lib/splitArrayIntoThree.js"),
-    PhantomJsHeadlessAnalyzer       = require("./lib/PhantomJsHeadlessAnalyzer.js");
+    splitArrayIntoThree             = require("." + path.sep + "lib" + path.sep + "splitArrayIntoThree.js"),
+    PhantomJsHeadlessAnalyzer       = require("." + path.sep + "lib" + path.sep + "PhantomJsHeadlessAnalyzer.js");
 
 module.exports = function (grunt) {
 
@@ -23,7 +23,7 @@ module.exports = function (grunt) {
     function initialiseAppJsonProcessing(instance, file, options) {
         var pageToProcess = "index.html",
             rootDir       = options.pageRoot || file,
-            appJson       = grunt.file.readJSON(file + "/app.json");
+            appJson       = grunt.file.readJSON(file + path.sep + "app.json");
         if (appJson.indexHtmlPath) {
             pageToProcess = appJson.indexHtmlPath;
         }
@@ -73,7 +73,7 @@ module.exports = function (grunt) {
             stats   = fs.statSync(file);
             if (stats.isDirectory()) {
                 // if is dir - check for app.json
-                if (fs.existsSync(file + "/app.json")) {
+                if (fs.existsSync(file + path.sep + "app.json")) {
                     return file;
                 }
             }
