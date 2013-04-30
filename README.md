@@ -234,6 +234,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.6.5 - Removing large test dependencies to reduce download size
 - 0.6.4 - Don't stat non local files (Thanks to Alan Shaw)
 - 0.6.3 - Improved error reporting for JS errors from PhantomJS
 - 0.6.0 - Introduced the capability to use the index.html page of a project to simplify things further. Note the following properties are now dropped: `isTouch`, `mode`, `printDepGraph`
