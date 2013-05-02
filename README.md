@@ -1,6 +1,6 @@
 # grunt-sencha-dependencies [![Build Status](https://api.travis-ci.org/mattgoldspink/grunt-sencha-dependencies.png?branch=master)](https://travis-ci.org/mattgoldspink/grunt-sencha-dependencies)
 
-> A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses and any additional &lt;script&gt; tags so the list can be passed on to further commands like concat, jshint, uglify.
+> A Grunt.js plugin which will figure out the order of Ext classes your Ext.application uses and any additional &lt;script&gt; tags (see `options.includeAllScriptTags` for details on this) so the list can be passed on to further commands like concat, jshint, uglify.
 
 ## Getting Started
 
@@ -110,6 +110,14 @@ Default value: undefined
 This property is only needed in the case where you don't set the `pageToProcess` property.
 
 This is the location of the Sencha install. It should be the unzipped install as it comes from Sencha - i.e. don't modify the folder layout in there. This should be set relative to the `pageRoot` property.
+
+#### options.includeAllScriptTags
+Type: `Boolean`
+Default value: true
+
+By default the task not only checks Ext.History to see what files Ext loaded, but it also looks at all of the &lt;script/&gt; tags in the page and adds them into the resulting list in the correct order. This can be useful when you include non-Sencha/Ext files in your page that you still want evaluated or concated in later tasks.
+
+Setting this option to false will cause all the additional &lt;script/&gt; tags to be ignored by this step.
 
 ### Usage Examples for non Sencha Cmd generated apps
 
@@ -234,6 +242,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.6.8 - Added support to ignore all Script tags if needed - see `options.includeAllScriptTags`
 - 0.6.7 - Fixed bug #29
 - 0.6.6 - Remove hardcoded path seperators to enable it to work on Windows
 - 0.6.5 - Removing large test dependencies to reduce download size
