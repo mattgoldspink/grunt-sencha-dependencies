@@ -36,10 +36,11 @@ var grunt        = require("grunt"),
  *                                 relative to the pageRoot
  * @param {boolean} pageToProcess The page that will be processed when looking for tags
  */
-function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, pageToProcess) {
-    this.appJsFilePath        = appJsFilePath;
+function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, pageToProcess, includeAllScriptTags) {
+    this.appJsFilePath              = appJsFilePath;
     this.setPageRoot(pageRoot);
-    this.pageToProcess        = pageToProcess;
+    this.pageToProcess              = pageToProcess;
+    this.includeAllScriptTags = includeAllScriptTags;
     if (typeof senchaDirOrAppJson === "object") {
         // we're in mode where we use appJson
         this.appJson          = senchaDirOrAppJson;
@@ -278,7 +279,11 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
 
     // Create some kind of "all done" event.
     phantomjs.on("mytask.done", function (foundFiles) {
-        files = me.resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
+        if (me.includeAllScriptTags === true) {
+            files = me.resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
+        } else {
+            files = me.normaliseFilePaths(foundFiles.history);
+        }
         phantomjs.halt();
     });
 
