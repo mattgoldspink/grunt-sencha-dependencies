@@ -11,6 +11,7 @@
  */
 var grunt        = require("grunt"),
     phantomjs    = require("grunt-lib-phantomjs").init(grunt),
+    connect      = require("connect"),
     // Nodejs libs.
     path         = require("path"),
     fs           = require("fs"),
@@ -106,11 +107,12 @@ PhantomJsHeadlessAnalyzer.prototype.normaliseFilePaths = function (filePaths) {
 };
 
 PhantomJsHeadlessAnalyzer.prototype.normaliseFilePath = function (filePath) {
-    filePath = filePath.replace(/^file:(\/)*/, path.sep);
-    if (!/^\//.test(filePath)) {
+    if (/^http:/.test(filePath)) {
+        filePath = filePath.replace(/^http:\/\/localhost:3000\/*/, "");
+    } else {
         filePath = this.pageRoot + path.sep + filePath;
     }
-    return path.normalize(this.pageRoot + path.sep + path.relative(this.pageRoot, filePath));
+    return path.normalize(filePath);
 };
 
 PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
@@ -119,7 +121,7 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
         appFile = path.normalize(this.pageRoot + path.sep + this.appJsFilePath);
     files.push(coreFile);
     for (var i = 0, len = history.length; i < len; i++) {
-        var filePath = history[i];//this.normaliseFilePath(history[i]);
+        var filePath = history[i];
         if (filePath !== appFile &&
                 !/\/ext(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
                 !/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(filePath) &&
@@ -170,8 +172,20 @@ function turnUrlIntoRelativeDirectory(relativeTo, url) {
     if (/^file:/.test(url)) {
         url = url.substring(5);
     }
+    if (/^http:/.test(url)) {
+        url = url.substring("http://localhost:3000/".length);
+    }
     return path.relative(relativeTo, url.substring(0, url.lastIndexOf("/")));
 }
+
+PhantomJsHeadlessAnalyzer.prototype.startWebServerToHostPage = function (tempPage) {
+    this.app = connect()
+              //.use(connect.logger('dev'))
+              .use(connect["static"](process.cwd()))
+              .listen(3000);
+    grunt.log.debug("Connect started: " + "http://localhost:3000/" + tempPage + "  -  " + process.cwd());
+    return "http://localhost:3000/" + tempPage;
+};
 
 PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = function (allScripts, history) {
     var i, len;
@@ -224,6 +238,11 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
             grunt.file["delete"](tempPage);
         } catch (e) {
             grunt.log.warn("An error occured whilst trying to delete the temporary file " + tempPage);
+        }
+        try {
+            me.app.close();
+        } catch (e) {
+            grunt.log.warn("Could not stop connect server: " + e);
         }
     }
 
@@ -279,10 +298,11 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     this.setHtmlPageToProcess(tempPage);
 
     // Spawn phantomjs
-    phantomjs.spawn(tempPage, {
+    phantomjs.spawn(this.startWebServerToHostPage(tempPage), {
         // Additional PhantomJS options.
         options: {
-            phantomScript: asset("phantomjs" + path.sep + "main.js")
+            phantomScript: asset("phantomjs" + path.sep + "main.js"),
+            loadImages: false
         },
         // Complete the task when done.
         done: function (err) {

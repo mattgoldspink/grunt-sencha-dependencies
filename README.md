@@ -234,6 +234,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.7.0 - Kick off http server to avoid FD limits in PhantomJS
 - 0.6.7 - Fixed bug #29
 - 0.6.6 - Remove hardcoded path seperators to enable it to work on Windows
 - 0.6.5 - Removing large test dependencies to reduce download size

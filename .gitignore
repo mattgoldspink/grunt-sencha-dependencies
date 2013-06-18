@@ -17,3 +17,5 @@ npm-debug.log
 node_modules
 test/integration/dest/app.min.js
 test/integration/dest/source-map.js
+
+test/integration/libs/
