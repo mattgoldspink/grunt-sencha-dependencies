@@ -10,8 +10,8 @@
 
 var fs                              = require("fs"),
     path                            = require("path"),
-    splitArrayIntoThree             = require("." + path.sep + "lib" + path.sep + "splitArrayIntoThree.js"),
-    PhantomJsHeadlessAnalyzer       = require("." + path.sep + "lib" + path.sep + "PhantomJsHeadlessAnalyzer.js");
+    splitArrayIntoThree             = require(__dirname + path.sep + "lib" + path.sep + "splitArrayIntoThree.js"),
+    PhantomJsHeadlessAnalyzer       = require(__dirname + path.sep + "lib" + path.sep + "PhantomJsHeadlessAnalyzer.js");
 
 module.exports = function (grunt) {
 

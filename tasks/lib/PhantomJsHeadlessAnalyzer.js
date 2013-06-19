@@ -184,8 +184,9 @@ PhantomJsHeadlessAnalyzer.prototype.startWebServerToHostPage = function (tempPag
               //.use(connect.logger('dev'))
               .use(connect["static"](process.cwd()))
               .listen(3000);
-    grunt.log.debug("Connect started: " + "http://localhost:3000/" + tempPage + "  -  " + process.cwd());
-    return "http://localhost:3000/" + tempPage;
+    var pathSepReplacement = new RegExp("\\"+path.sep, "g")
+    grunt.log.debug("Connect started: " + "http://localhost:3000/" + tempPage.replace(pathSepReplacement, "/") + "  -  " + process.cwd());
+    return "http://localhost:3000/" + tempPage.replace(pathSepReplacement, "/");
 };
 
 PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = function (allScripts, history) {
