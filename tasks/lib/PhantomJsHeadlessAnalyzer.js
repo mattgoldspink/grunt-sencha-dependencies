@@ -138,7 +138,9 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
             }
         }
     }
-    files.push(appFile);
+    if (!!this.appJsFilePath) {
+        files.push(appFile);
+    }
     return files;
 };
 
