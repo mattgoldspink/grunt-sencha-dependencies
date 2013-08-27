@@ -242,6 +242,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.7.2 - Allow app.js to be undefined
 - 0.7.1 - Fixing path issues that were causing problems on Windows
 - 0.7.0 - Kick off http server to avoid FD limits in PhantomJS
 - 0.6.8 - Added support to ignore all Script tags if needed - see `options.includeAllScriptTags`
