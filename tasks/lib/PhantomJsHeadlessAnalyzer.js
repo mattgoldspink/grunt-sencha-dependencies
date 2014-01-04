@@ -55,6 +55,14 @@ PhantomJsHeadlessAnalyzer.prototype.setGrunt = function (gruntLive) {
     grunt = gruntLive;
 };
 
+PhantomJsHeadlessAnalyzer.prototype.setExclusions = function (exclude) {
+    this.exclude = exclude || [];
+    if (typeof this.exclude == "string") {
+        this.exclude = [this.exclude];
+    }
+};
+
+
 function removeTrailingSlash(filePath) {
     return filePath[filePath.length - 1] === path.sep ? filePath.substring(0, filePath.length - 1) : filePath;
 }
@@ -120,7 +128,7 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
     var files = [],
         coreFile = this.getSenchaCoreFile(),
         appFile = path.normalize(this.pageRoot + path.sep + this.appJsFilePath);
-    files.push(coreFile);
+    this.addIfNotExcluded(coreFile, files);
     for (var i = 0, len = history.length; i < len; i++) {
         var filePath = history[i];
         if (filePath !== appFile &&
@@ -131,7 +139,7 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
             if (fs.existsSync(filePath)) {
                 var stats = fs.statSync(filePath);
                 if (!stats.isDirectory()) {
-                    files.push(filePath);
+                    this.addIfNotExcluded(filePath, files);
                 }
             } else {
                 grunt.log.warn("Excluding non filesystem based file " + filePath);
@@ -139,9 +147,15 @@ PhantomJsHeadlessAnalyzer.prototype.reorderFiles = function (history) {
         }
     }
     if (!!this.appJsFilePath) {
-        files.push(appFile);
+        this.addIfNotExcluded(appFile, files);
     }
     return files;
+};
+
+PhantomJsHeadlessAnalyzer.prototype.addIfNotExcluded = function (filePath, array) {
+    if (!this.exclude || this.exclude.indexOf(filePath) < 0) {
+        array.push(filePath);
+    }
 };
 
 PhantomJsHeadlessAnalyzer.prototype.setHtmlPageToProcess = function (tempPage) {
@@ -186,7 +200,7 @@ PhantomJsHeadlessAnalyzer.prototype.startWebServerToHostPage = function (tempPag
               //.use(connect.logger('dev'))
               .use(connect["static"](process.cwd()))
               .listen(3000);
-    var pathSepReplacement = new RegExp("\\"+path.sep, "g")
+    var pathSepReplacement = new RegExp("\\" + path.sep, "g");
     grunt.log.debug("Connect started: " + "http://localhost:3000/" + tempPage.replace(pathSepReplacement, "/") + "  -  " + process.cwd());
     return "http://localhost:3000/" + tempPage.replace(pathSepReplacement, "/");
 };

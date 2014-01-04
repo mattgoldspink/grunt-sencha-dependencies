@@ -62,6 +62,7 @@ module.exports = function (grunt) {
                 options.appJs, options.senchaDir, options.pageRoot, options.pageToProcess, options.includeAllScriptTags
             );
         }
+        dependencyChecker.setExclusions(options.exclude);
         dependencyChecker.setGrunt(grunt);
         return dependencyChecker;
     }

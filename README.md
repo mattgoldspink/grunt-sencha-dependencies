@@ -119,6 +119,12 @@ By default the task not only checks Ext.History to see what files Ext loaded, bu
 
 Setting this option to false will cause all the additional &lt;script/&gt; tags to be ignored by this step.
 
+#### options.exclude
+Type: `Array`
+Default value: null
+
+If you need to exclude any files from being added to the generated list of dependencies then you can specify an `exclude` property as an Array of file names and paths.
+
 ### Usage Examples for non Sencha Cmd generated apps
 
 The below examples show how to configure the task with an application which hasn't used Sencha Cmd or doesn't have an app.json file.
@@ -242,6 +248,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.8.0 - Add `exclude` property to ignore certain files in the dependency list
 - 0.7.2 - Allow app.js to be undefined
 - 0.7.1 - Fixing path issues that were causing problems on Windows
 - 0.7.0 - Kick off http server to avoid FD limits in PhantomJS
