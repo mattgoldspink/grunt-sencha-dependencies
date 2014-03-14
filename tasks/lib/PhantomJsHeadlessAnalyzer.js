@@ -192,7 +192,8 @@ function turnUrlIntoRelativeDirectory(relativeTo, url) {
     if (/^http:/.test(url)) {
         url = url.substring("http://localhost:3000/".length);
     }
-    return path.relative(relativeTo, url.substring(0, url.lastIndexOf("/")));
+	url = path.normalize(url);
+    return path.relative(relativeTo, url.substring(0, url.lastIndexOf(path.sep)));
 }
 
 PhantomJsHeadlessAnalyzer.prototype.startWebServerToHostPage = function (tempPage) {
