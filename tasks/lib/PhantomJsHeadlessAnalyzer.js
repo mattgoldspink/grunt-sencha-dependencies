@@ -295,7 +295,7 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
             msgStack.push(" -> " + t.file + ": " + t.line + (t["function"] ? " (in function \"" + t["function"] + "\")" : ""));
         });
         if (errorCount.length === 1 && me.failOnError === true) {
-            grunt.fail.fatal(msgStack.join("\n"));
+            grunt.fail.fatal("Grunt execution stopped because options.failOnError is true \n\n"+msgStack.join("\n"));
         }
     });
 
