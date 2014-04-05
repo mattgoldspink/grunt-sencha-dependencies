@@ -42,7 +42,8 @@ module.exports = function (grunt) {
     function getOptions(instance) {
         var options = instance.options({
             pageRoot: "",
-            includeAllScriptTags: true
+            includeAllScriptTags: true,
+            failOnError:true
         });
         if (options.appFile && !options.appJs) {
             options.appJs = options.appFile;
