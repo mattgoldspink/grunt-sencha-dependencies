@@ -35,12 +35,14 @@ var grunt        = require("grunt"),
  *                                 If you're using an app.json this will be the html page that should be used to process in phantomjs
  *                                 relative to the pageRoot
  * @param {boolean} pageToProcess The page that will be processed when looking for tags
+ * @param {boolean} failOnError Execute grunt.fail once PhantomJS detects any javascript error 
  */
-function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, pageToProcess, includeAllScriptTags) {
+function PhantomJsHeadlessAnalyzer(appJsFilePath, senchaDirOrAppJson, pageRoot, pageToProcess, includeAllScriptTags, failOnError) {
     this.appJsFilePath              = appJsFilePath;
     this.setPageRoot(pageRoot);
     this.pageToProcess              = pageToProcess;
-    this.includeAllScriptTags = includeAllScriptTags;
+    this.includeAllScriptTags       = includeAllScriptTags;
+    this.failOnError                = failOnError;
     if (typeof senchaDirOrAppJson === "object") {
         // we're in mode where we use appJson
         this.appJson          = senchaDirOrAppJson;
@@ -292,7 +294,9 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         trace.forEach(function (t) {
             msgStack.push(" -> " + t.file + ": " + t.line + (t["function"] ? " (in function \"" + t["function"] + "\")" : ""));
         });
-        grunt.verbose.error(msgStack.join("\n"));
+        if (errorCount.length === 1 && me.failOnError === true) {
+            grunt.fail.fatal("Grunt execution stopped because options.failOnError is true \n\n"+msgStack.join("\n"));
+        }
     });
 
     // Create some kind of "all done" event.
