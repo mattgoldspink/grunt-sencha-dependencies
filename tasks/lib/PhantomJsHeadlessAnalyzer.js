@@ -10,7 +10,7 @@
  *         would be to introduce a proxy server.
  */
 var grunt        = require("grunt"),
-    phantomjs    = require("grunt-lib-phantomjs").init(grunt),
+    phantomjs    = require("grunt-lib-phantomjs"),
     connect      = require("connect"),
     // Nodejs libs.
     path         = require("path"),
@@ -249,6 +249,7 @@ PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = f
 
 PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     var me = this,
+        pjs = phantomjs.init(grunt),
         errorCount = [],
         files = null,
         hasSeenSenchaLib = false,
@@ -267,23 +268,23 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
         }
     }
 
-    phantomjs.on("onResourceRequested", function (response) {
+    pjs.on("onResourceRequested", function (request) {
         if (!hasSeenSenchaLib) {
-            if (/\/ext(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
-                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
+            if (/\/ext(-all|-all-debug|-debug){0,1}.js/.test(request.url)) {
+                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, request.url));
                 hasSeenSenchaLib = true;
-            } else if (/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(response.url)) {
-                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, response.url));
+            } else if (/\/sencha-touch(-all|-all-debug|-debug){0,1}.js/.test(request.url)) {
+                me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, request.url));
                 me.isTouch = true;
                 hasSeenSenchaLib = true;
             }
         }
-        if (/\.js/.test(response.url)) {
-            grunt.log.debug(response.url);
+        if (/\.js/.test(request.url)) {
+            grunt.log.debug(request.url);
         }
     });
 
-    phantomjs.on("error.onError", function (msg, trace) {
+    pjs.on("error.onError", function (msg, trace) {
         errorCount.push(msg);
         if (errorCount.length === 1) {
             grunt.log.warn("A JavaScript error occured whilst loading your page - this could" +
@@ -300,32 +301,32 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     });
 
     // Create some kind of "all done" event.
-    phantomjs.on("mytask.done", function (foundFiles) {
+    pjs.on("mytask.done", function (foundFiles) {
         if (me.includeAllScriptTags === true) {
             files = me.resolveTheTwoFileSetsToBeInTheRightOrder(foundFiles.scriptTags, foundFiles.history);
         } else {
             files = me.normaliseFilePaths(foundFiles.history);
         }
-        phantomjs.halt();
+        pjs.halt();
     });
 
     // Built-in error handlers.
-    phantomjs.on("fail.load", function (url) {
+    pjs.on("fail.load", function (url) {
         safeDeleteTempFile();
-        phantomjs.halt();
+        pjs.halt();
         grunt.warn("PhantomJS unable to load URL " + url);
     });
 
-    phantomjs.on("fail.timeout", function () {
+    pjs.on("fail.timeout", function () {
         safeDeleteTempFile();
-        phantomjs.halt();
+        pjs.halt();
         grunt.warn("PhantomJS timed out.");
     });
 
     this.setHtmlPageToProcess(tempPage);
 
     // Spawn phantomjs
-    phantomjs.spawn(this.startWebServerToHostPage(tempPage), {
+    pjs.spawn(this.startWebServerToHostPage(tempPage), {
         // Additional PhantomJS options.
         options: {
             phantomScript: asset("phantomjs" + path.sep + "main.js"),
