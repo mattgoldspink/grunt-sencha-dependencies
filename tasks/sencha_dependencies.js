@@ -65,6 +65,7 @@ module.exports = function (grunt) {
         }
         dependencyChecker.setExclusions(options.exclude);
         dependencyChecker.setGrunt(grunt);
+        dependencyChecker.setResourceReceivedListener(options.onResourceReceived);
         return dependencyChecker;
     }
 

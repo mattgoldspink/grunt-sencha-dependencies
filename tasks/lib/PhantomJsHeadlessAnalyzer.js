@@ -64,6 +64,9 @@ PhantomJsHeadlessAnalyzer.prototype.setExclusions = function (exclude) {
     }
 };
 
+PhantomJsHeadlessAnalyzer.prototype.setResourceReceivedListener = function (listener) {
+    this.onResourceReceived = listener;
+};
 
 function removeTrailingSlash(filePath) {
     return filePath[filePath.length - 1] === path.sep ? filePath.substring(0, filePath.length - 1) : filePath;
@@ -249,6 +252,8 @@ PhantomJsHeadlessAnalyzer.prototype.resolveTheTwoFileSetsToBeInTheRightOrder = f
 
 PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     var me = this,
+        onResourceReceived = this.onResourceReceived,
+        requestMap = onResourceReceived ? {} : null,
         pjs = phantomjs.init(grunt),
         errorCount = [],
         files = null,
@@ -269,6 +274,9 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
     }
 
     pjs.on("onResourceRequested", function (request) {
+        if (requestMap) {
+            requestMap[request.id] = request;
+        }
         if (!hasSeenSenchaLib) {
             if (/\/ext(-all|-all-debug|-debug){0,1}.js/.test(request.url)) {
                 me.setSenchaDir(turnUrlIntoRelativeDirectory(me.pageRoot, request.url));
@@ -283,6 +291,16 @@ PhantomJsHeadlessAnalyzer.prototype.getDependencies = function (doneFn, task) {
             grunt.log.debug(request.url);
         }
     });
+
+    if (requestMap) {
+        pjs.on("onResourceReceived", function (response) {
+            var request = requestMap[response.id];
+            if (request) {
+                delete requestMap[response.id];
+                onResourceReceived.call(null, request, response);
+            }
+        });
+    }
 
     pjs.on("error.onError", function (msg, trace) {
         errorCount.push(msg);
