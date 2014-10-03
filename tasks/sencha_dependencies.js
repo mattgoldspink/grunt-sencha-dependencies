@@ -43,7 +43,7 @@ module.exports = function (grunt) {
         var options = instance.options({
             pageRoot: "",
             includeAllScriptTags: true,
-            failOnError:false
+            failOnError: false
         });
         if (options.appFile && !options.appJs) {
             options.appJs = options.appFile;
@@ -60,7 +60,7 @@ module.exports = function (grunt) {
         } else {
             grunt.log.writeln("Processing Sencha app file " + (options.pageToProcess ?  options.pageToProcess : options.appJs) + "...");
             dependencyChecker = new PhantomJsHeadlessAnalyzer(
-                options.appJs, options.senchaDir, options.pageRoot, options.pageToProcess, options.includeAllScriptTags,options.failOnError
+                options.appJs, options.senchaDir, options.pageRoot, options.pageToProcess, options.includeAllScriptTags, options.failOnError
             );
         }
         dependencyChecker.setExclusions(options.exclude);
