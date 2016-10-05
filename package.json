@@ -29,8 +29,8 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "grunt-lib-phantomjs": "~0.3.0",
-    "phantomjs": "1.9.0-6",
+    "grunt-lib-phantomjs": "~0.7.1",
+    "phantomjs": "1.9.20",
     "connect": "~2.7.11"
   },
   "devDependencies": {
