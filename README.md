@@ -248,6 +248,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style,
 
 ## Release History
 
+- 0.9.0 - Fix issue #40 (thanks @andrei-ivanov)
 - 0.8.1 - Fix issue #33
 - 0.8.0 - Add `exclude` property to ignore certain files in the dependency list
 - 0.7.2 - Allow app.js to be undefined
