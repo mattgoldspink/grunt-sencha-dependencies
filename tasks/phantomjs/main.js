@@ -108,10 +108,8 @@ page.onResourceRequested = function (request) {
     sendMessage("onResourceRequested", request);
 };
 
-page.onResourceReceived = function (request) {
-    if (request.stage === "end") {
-        sendMessage("onResourceReceived", request);
-    }
+page.onResourceReceived = function (response) {
+    sendMessage("onResourceReceived", response);
 };
 
 page.onError = function (msg, trace) {
